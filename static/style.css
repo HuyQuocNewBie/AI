@@ -1,0 +1,166 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Quicksand', sans-serif;
+}
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: linear-gradient(140deg, rgb(255, 204, 112) 0%, rgb(200, 80, 192) 40%, rgb(65, 88, 208) 100%);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #c850c0;
+}
+/* Header */
+.header {
+    text-align: center;
+    padding: 20px;
+}
+
+.header h1 {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 32px;
+    color: white;
+    margin-bottom: 10px;
+}
+
+.header img {
+    width: 300px;   
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+}
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.game-box {
+    padding: 30px;
+    text-align: center;
+    width: 350px;
+    margin-top: -300px;
+}
+
+/* Tiêu đề */
+h1 {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+/* Đoạn giới thiệu */
+p {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+/* Nút bấm */
+.start-button {
+    display: inline-block;
+    padding: 12px 25px;
+    font-size: 18px;
+    color: white;
+    background: #ff6b6b;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.3s ease;
+}
+
+/* Hiệu ứng hover */
+.start-button:hover {
+    background: #ff4f4f;
+    transform: translateY(-3px);
+}
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Đẩy nội dung lên trên */
+    height: 100vh;
+    padding-top: 50px; /* Thêm khoảng cách từ trên xuống */
+  }
+.word-display {
+    font-size: 60px;
+    font-weight: bold;
+    margin: 20px 0;
+    color: white;
+    text-align: center;
+  }
+  .input-box {
+    width: 120%;
+    padding: 12px;
+    font-size: 25px;
+    border: none;
+    border-radius: 25px;
+    text-align: center;
+    outline: none;
+  }
+.timer {
+    font-size: 50px;
+    font-weight: bold;
+    margin-top: 20px;
+    color: white;
+  }
+.start-button {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 18px;
+    color: white;
+    background: #ff6b81;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+}
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.modal-content button {
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background: #ff6666;
+    color: white;
+    border-radius: 5px;
+}
+
+.modal-content button:hover {
+    background: #ff4d4d;
+}
+#loseModal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    z-index: 10000;
+}
+.input-box::placeholder {
+    color: #999;
+  }
+  form {
+    margin-top: 10px;
+  }

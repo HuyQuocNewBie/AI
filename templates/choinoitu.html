@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vua Nối Từ</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="timer">⏳ Thời gian: <span id="countdown">10</span> giây</div>
+
+      <div class="word-display" id="currentWord">
+        {% if da_su_dung %} {{ da_su_dung[-1] }} {% else %} bắt đầu {% endif %}
+      </div>
+
+      <form method="POST">
+        <input type="text" class="input-box" name="user_word" autofocus />
+      </form>
+    </div>
+
+    <!-- Div thông báo thua -->
+    {% if ket_qua %}
+    <div id="loseModal" class="modal" style="display: block">
+      <div class="modal-content">
+        <h2 id="loseMessage">{{ ket_qua }}</h2>
+        <button onclick="window.location.href='/'">Trang chủ</button>
+        <button onclick="window.location.href='/choinoitu?reset=true'">
+          Chơi lại
+        </button>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Gán biến Flask vào thẻ span ẩn -->
+    <span id="stopTimer" data-stop="{{ stop_timer | lower }}"></span>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>
