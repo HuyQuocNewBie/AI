@@ -1,6 +1,6 @@
 import os
 import random
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, render_template, request, session, redirect, url_for, Session  
 from game_logic import (
     doc_file_tu_vung, 
     kiem_tra_tu_nhap, 
@@ -13,6 +13,8 @@ from game_logic import (
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", os.urandom(24))
+app.config["SESSION_TYPE"] = "filesystem"  
+Session(app)  # Kích hoạt session lưu file 
 
 # Load từ vựng và bảng ánh xạ khi ứng dụng khởi động
 tu_vung, tu_map = doc_file_tu_vung()
@@ -24,7 +26,9 @@ def home():
 @app.route("/choinoitu", methods=["GET", "POST"])
 def index():
     if request.method == "GET" and request.args.get("reset") == "true":
-        session.clear()  # Xóa toàn bộ session để tránh lỗi còn sót dữ liệu
+        session.pop("da_su_dung", None)
+        session.pop("ket_qua", None)
+
     if "da_su_dung" not in session or not session["da_su_dung"]:
         ai_first_word = random.choice(list(tu_vung))
         session["da_su_dung"] = [ai_first_word]
@@ -54,7 +58,6 @@ def index():
         else:
             da_su_dung.append(user_word)
             session["da_su_dung"] = da_su_dung
-            print("Danh sách từ đã sử dụng:", da_su_dung)
 
             tu_cuoi = tach_tu_cuoi(user_word)
             ai_win, ai_sequence = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map)
@@ -62,7 +65,6 @@ def index():
             if ai_win and ai_sequence:
                 ai_move = ai_sequence[0]  # Lấy từ đầu tiên AI chọn
                 da_su_dung.append(ai_move)
-                print("AI chọn từ:", ai_move)
                 session["da_su_dung"] = da_su_dung
             else:
                 session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
