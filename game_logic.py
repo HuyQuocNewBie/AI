@@ -23,10 +23,9 @@ def doc_file_tu_vung():
 
 # Hàm tách từ cuối cùng trong cụm từ
 def tach_tu_cuoi(cum_tu):
-    words = cum_tu.split()
-    if not words:
-        return None
-    return words[-1]
+    words = cum_tu.strip().split()  # Loại bỏ khoảng trắng, tách từ
+    return words[-1] if words else None  # Trả về từ cuối
+
 
 # Hàm tìm tất cả các cụm từ bắt đầu bằng từ cho trước và chưa được sử dụng, sử dụng bảng ánh xạ tu_map để tối ưu
 def tim_tat_ca_tu_bat_dau_bang(tu, tu_map, da_su_dung):
@@ -77,10 +76,14 @@ def kiem_tra_tu_hop_le(tu):
     return all(char.isalpha() or char.isspace() for char in tu)
 
 def kiem_tra_tu_noi_tiep(tu_nhap, tu_truoc_do):
-    tu_cuoi_truoc_do = tach_tu_cuoi(tu_truoc_do)
-    if not tu_cuoi_truoc_do:
-        return False
-    tu_dau_tien_nhap = tu_nhap.split()[0]
+    tu_cuoi_truoc_do = tach_tu_cuoi(tu_truoc_do).lower()  # Lấy từ cuối và chuyển về chữ thường
+    
+    if not tu_cuoi_truoc_do or not tu_nhap.strip():
+        return False  # Nếu không có từ hợp lệ, trả về False
+    
+    words_nhap = tu_nhap.strip().split()
+    tu_dau_tien_nhap = words_nhap[0].lower() if words_nhap else None  # Lấy từ đầu và chuyển chữ thường
+    
     return tu_dau_tien_nhap == tu_cuoi_truoc_do
 
 # --- ÁP DỤNG A* SEARCH ---
