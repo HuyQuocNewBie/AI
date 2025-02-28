@@ -54,32 +54,19 @@ def index():
             session["ket_qua"] = f"Từ nhập vào phải bắt đầu bằng '{tach_tu_cuoi(da_su_dung[-1])}'. Bạn thua!"
             session["stop_timer"] = True
         else:
-                        # Cập nhật từ người chơi nhập
             da_su_dung.append(user_word)
             session["da_su_dung"] = da_su_dung
 
-            # Xác định khóa (key) mong đợi cho từ tiếp theo của AI:
-            expected_key = tach_tu_cuoi(user_word)  # ví dụ, nếu user nhập "sát thủ", expected_key = "thủ"
+            tu_cuoi = tach_tu_cuoi(user_word)
+            ai_win, ai_sequence = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map)
 
-            # Nếu từ điển không có bất kỳ cụm từ nào bắt đầu bằng expected_key, AI không thể nối được
-            if expected_key not in tu_map:
+            if ai_win and ai_sequence:
+                ai_move = ai_sequence[0]  # Lấy từ đầu tiên AI chọn
+                da_su_dung.append(ai_move)
+                session["da_su_dung"] = da_su_dung
+            else:
                 session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
                 session["stop_timer"] = True
-            else:
-                # Sử dụng A* Search để tìm chuỗi nước đi của AI với key mong đợi
-                ai_win, ai_sequence = a_star_search(expected_key, da_su_dung, "ai", tu_map)
-                if ai_win and ai_sequence:
-                    ai_move = ai_sequence[0]
-                    # Kiểm tra: từ đầu tiên của ai_move phải trùng với expected_key
-                    if ai_move.split()[0].lower() == expected_key:
-                        da_su_dung.append(ai_move)
-                        session["da_su_dung"] = da_su_dung
-                    else:
-                        session["ket_qua"] = f"AI chọn từ không hợp lệ (phải bắt đầu bằng '{expected_key}'). Bạn thua!"
-                        session["stop_timer"] = True
-                else:
-                    session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
-                    session["stop_timer"] = True
 
     return render_template("choinoitu.html", da_su_dung=session.get("da_su_dung", []), ket_qua=session.pop("ket_qua", None), stop_timer=session.pop("stop_timer", False))
 
