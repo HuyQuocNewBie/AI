@@ -1,6 +1,6 @@
 import os
 import random
-from flask import Flask, render_template, request, session, redirect, url_for, Session  
+from flask import Flask, render_template, request, session, redirect, url_for
 from game_logic import (
     doc_file_tu_vung, 
     kiem_tra_tu_nhap, 
@@ -13,8 +13,6 @@ from game_logic import (
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", os.urandom(24))
-app.config["SESSION_TYPE"] = "filesystem"  
-Session(app)  # Kích hoạt session lưu file 
 
 # Load từ vựng và bảng ánh xạ khi ứng dụng khởi động
 tu_vung, tu_map = doc_file_tu_vung()
