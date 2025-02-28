@@ -24,7 +24,7 @@ def doc_file_tu_vung():
 # Hàm tách từ cuối cùng trong cụm từ
 def tach_tu_cuoi(cum_tu):
     words = cum_tu.strip().split()  # Loại bỏ khoảng trắng, tách từ
-    return words[-1] if words else None  # Trả về từ cuối
+    return words[-1] if words else None  # Trả về từ cuối 
 
 
 # Hàm tìm tất cả các cụm từ bắt đầu bằng từ cho trước và chưa được sử dụng, sử dụng bảng ánh xạ tu_map để tối ưu
