@@ -25,7 +25,6 @@ def home():
 def index():
     if request.method == "GET" and request.args.get("reset") == "true":
         session.clear()  # Xóa toàn bộ session để tránh lỗi còn sót dữ liệu
-
     if "da_su_dung" not in session or not session["da_su_dung"]:
         ai_first_word = random.choice(list(tu_vung))
         session["da_su_dung"] = [ai_first_word]
@@ -61,12 +60,11 @@ def index():
 
             if ai_win and ai_sequence:
                 ai_move = ai_sequence[0]  # Lấy từ đầu tiên AI chọn
-                if not kiem_tra_tu_noi_tiep(ai_move, user_word):
-                    session["ket_qua"] = f"AI chọn từ sai ({ai_move}). Bạn thắng!"
-                    session["stop_timer"] = True
-            else:
                 da_su_dung.append(ai_move)
                 session["da_su_dung"] = da_su_dung
+            else:
+                session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
+                session["stop_timer"] = True
 
     return render_template("choinoitu.html", da_su_dung=session.get("da_su_dung", []), ket_qua=session.pop("ket_qua", None), stop_timer=session.pop("stop_timer", False))
 
