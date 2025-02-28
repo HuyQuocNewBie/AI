@@ -35,7 +35,7 @@ def index():
         user_word = request.form.get("user_word", "").strip().lower()
         da_su_dung = session.get("da_su_dung", [])
 
-        if len(user_word.split()) == 1:
+        if len(user_word.split()) < 2:
             session["ket_qua"] = "Bạn đã nhập 1 từ. Bạn thua!"
             session["stop_timer"] = True
         elif not kiem_tra_tu_nhap(user_word):
