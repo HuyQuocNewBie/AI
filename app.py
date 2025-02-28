@@ -12,9 +12,9 @@ from game_logic import (
 )
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", os.urandom(24))
+app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")
 
-# Load từ vựng và bảng ánh xạ khi ứng dụng khởi động
+# Load từ vựng khi ứng dụng khởi động
 tu_vung, tu_map = doc_file_tu_vung()
 
 @app.route("/")
@@ -23,18 +23,22 @@ def home():
 
 @app.route("/choinoitu", methods=["GET", "POST"])
 def index():
+    # Reset trò chơi nếu cần
     if request.method == "GET" and request.args.get("reset") == "true":
-        session.pop("da_su_dung", None)
-        session.pop("ket_qua", None)
+        session.clear()  # Xóa toàn bộ session để reset trạng thái
 
+    # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước
     if "da_su_dung" not in session or not session["da_su_dung"]:
         ai_first_word = random.choice(list(tu_vung))
         session["da_su_dung"] = [ai_first_word]
+        session["current_word"] = ai_first_word
 
     if request.method == "POST":
         user_word = request.form.get("user_word", "").strip().lower()
         da_su_dung = session.get("da_su_dung", [])
+        last_word = session.get("current_word", "")
 
+        # Kiểm tra lỗi nhập từ
         if len(user_word.split()) < 2:
             session["ket_qua"] = "Bạn đã nhập 1 từ. Bạn thua!"
             session["stop_timer"] = True
@@ -50,25 +54,32 @@ def index():
         elif user_word in da_su_dung:
             session["ket_qua"] = "Từ này đã được sử dụng. Bạn thua!"
             session["stop_timer"] = True
-        elif da_su_dung and not kiem_tra_tu_noi_tiep(user_word, da_su_dung[-1]):
-            session["ket_qua"] = f"Từ nhập vào phải bắt đầu bằng '{tach_tu_cuoi(da_su_dung[-1])}'. Bạn thua!"
+        elif not kiem_tra_tu_noi_tiep(user_word, last_word):
+            session["ket_qua"] = f"Từ nhập vào phải bắt đầu bằng '{tach_tu_cuoi(last_word)}'. Bạn thua!"
             session["stop_timer"] = True
         else:
+            # Người chơi nhập hợp lệ
             da_su_dung.append(user_word)
             session["da_su_dung"] = da_su_dung
+            session["current_word"] = user_word  # Cập nhật từ hiện tại
 
+            # AI tìm từ tiếp theo
             tu_cuoi = tach_tu_cuoi(user_word)
             ai_win, ai_sequence = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map)
 
             if ai_win and ai_sequence:
-                ai_move = ai_sequence[0]  # Lấy từ đầu tiên AI chọn
+                ai_move = ai_sequence[0]  # Lấy từ AI chọn
                 da_su_dung.append(ai_move)
                 session["da_su_dung"] = da_su_dung
+                session["current_word"] = ai_move  # Cập nhật từ hiện tại sau lượt AI
             else:
                 session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
                 session["stop_timer"] = True
 
-    return render_template("choinoitu.html", da_su_dung=session.get("da_su_dung", []), ket_qua=session.pop("ket_qua", None), stop_timer=session.pop("stop_timer", False))
+    return render_template("choinoitu.html", 
+                           da_su_dung=session.get("da_su_dung", []), 
+                           ket_qua=session.pop("ket_qua", None), 
+                           stop_timer=session.pop("stop_timer", False))
 
 if __name__ == "__main__":
     app.run(debug=True)
