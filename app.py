@@ -54,6 +54,7 @@ def index():
         else:
             da_su_dung.append(user_word)
             session["da_su_dung"] = da_su_dung
+            print("Danh sách từ đã sử dụng:", da_su_dung)
 
             tu_cuoi = tach_tu_cuoi(user_word)
             ai_win, ai_sequence = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map)
@@ -61,6 +62,7 @@ def index():
             if ai_win and ai_sequence:
                 ai_move = ai_sequence[0]  # Lấy từ đầu tiên AI chọn
                 da_su_dung.append(ai_move)
+                print("AI chọn từ:", ai_move)
                 session["da_su_dung"] = da_su_dung
             else:
                 session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
