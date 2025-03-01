@@ -93,20 +93,37 @@ p {
     text-align: center;
   }
   .input-box {
-    width: 120%;
+    width: 100%;
     padding: 12px;
     font-size: 25px;
     border: none;
     border-radius: 25px;
     text-align: center;
     outline: none;
+    margin-top: 85px;
   }
-.timer {
-    font-size: 50px;
+  .timer {
+    font-size: 24px;
     font-weight: bold;
-    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
     color: white;
-  }
+}
+
+.timer::before {
+    content: "⏳";
+    display: inline-block;
+    animation: rotateClock 1.5s linear infinite;
+}
+  @keyframes rotateClock {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
 .start-button {
     display: inline-block;
     margin-top: 20px;
@@ -118,49 +135,122 @@ p {
     border-radius: 5px;
     text-decoration: none;
 }
-.modal {
-    display: none;
+.toast {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    background: white; /* Đổi màu nền thành trắng */
+    color: black; /* Đổi màu chữ thành đen */
+    padding: 30px; /* Tăng padding để div lớn hơn */
+    border-radius: 15px; /* Bo góc nhẹ nhàng */
     text-align: center;
+    z-index: 1000;
+    display: none;
+    width: 80%; /* Tăng chiều rộng */
+    max-width: 600px; /* Giới hạn chiều rộng tối đa */
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Tạo hiệu ứng bóng */
 }
 
-.modal-content button {
-    padding: 10px 20px;
-    margin: 10px;
-    font-size: 16px;
+.toast.show {
+    display: block;
+}
+
+.toast-content h2 {
+    margin-bottom: 20px;
+    font-size: 28px; /* Tăng kích thước chữ */
+    font-weight: bold;
+}
+
+.toast-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 18px; /* Tăng kích thước chữ */
     cursor: pointer;
     border: none;
-    background: #ff6666;
     color: white;
-    border-radius: 5px;
+    transition: all 0.3s ease;
 }
 
-.modal-content button:hover {
-    background: #ff4d4d;
+.home-btn {
+    background: linear-gradient(45deg, #ff416c, #ff4b2b);
 }
-#loseModal {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    z-index: 10000;
+
+.retry-btn {
+    background: linear-gradient(45deg, #1e90ff, #00bfff);
 }
-.input-box::placeholder {
-    color: #999;
-  }
-  form {
-    margin-top: 10px;
-  }
+
+.home-btn:hover, .retry-btn:hover {
+    opacity: 0.8;
+    transform: scale(1.05); /* Tạo hiệu ứng phóng to nhẹ khi hover */
+}
+/* Đáp ứng trên thiết bị nhỏ hơn 768px (điện thoại) */
+@media (max-width: 768px) {
+    body {
+        padding: 20px;
+        justify-content: flex-start; /* Đẩy nội dung lên trên */
+    }
+
+    .header img {
+        width: 80%; /* Giảm kích thước ảnh */
+    }
+
+    .game-box {
+        width: 90%;
+        margin-top: -200px;
+    }
+
+    .word-display {
+        font-size: 40px; /* Giảm kích thước chữ để vừa màn hình */
+    }
+
+    .input-box {
+        font-size: 20px;
+        padding: 10px;
+        width: 80%; /* Giảm chiều rộng input để vừa với màn hình */
+    }
+
+    .toast {
+        width: 90%; /* Đảm bảo hộp thông báo không quá to */
+        padding: 20px;
+    }
+
+    .toast-content h2 {
+        font-size: 22px;
+    }
+
+    .btn {
+        font-size: 16px;
+        padding: 10px 20px;
+    }
+
+    .toast-buttons {
+        flex-direction: column; /* Xếp nút dọc trên màn nhỏ */
+    }
+}
+
+/* Đáp ứng trên màn hình nhỏ hơn 480px (điện thoại cỡ nhỏ) */
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 24px; /* Giảm kích thước tiêu đề */
+    }
+
+    .word-display {
+        font-size: 32px;
+    }
+
+    .input-box {
+        font-size: 18px;
+        width: 100%;
+    }
+
+    .timer {
+        font-size: 18px;
+    }
+}

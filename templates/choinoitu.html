@@ -11,7 +11,7 @@
   </head>
   <body>
     <div class="game-container">
-      <div class="timer">⏳ Thời gian: <span id="countdown">10</span> giây</div>
+      <div class="timer">Thời gian: <span id="countdown">10</span> giây</div>
 
       <div class="word-display" id="currentWord">
         {% if da_su_dung %} {{ da_su_dung[-1] }} {% else %} bắt đầu {% endif %}
@@ -24,13 +24,13 @@
 
     <!-- Div thông báo thua -->
     {% if ket_qua %}
-    <div id="loseModal" class="modal" style="display: block">
-      <div class="modal-content">
-        <h2 id="loseMessage">{{ ket_qua }}</h2>
-        <button onclick="window.location.href='/'">Trang chủ</button>
-        <button onclick="window.location.href='/choinoitu?reset=true'">
-          Chơi lại
-        </button>
+    <div id="toast" class="toast show">
+      <div class="toast-content">
+        <h2>{{ ket_qua }}</h2>
+        <div class="toast-buttons">
+          <button class="btn home-btn" onclick="window.location.href='/'">Trang chủ</button>
+          <button class="btn retry-btn" onclick="window.location.href='/choinoitu?reset=true'">Chơi lại</button>
+        </div>
       </div>
     </div>
     {% endif %}
