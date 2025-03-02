@@ -13,8 +13,6 @@ a đẩu
 a đới
 a ga
 a giao
-a giăng
-a gon
 a ha
 a hành
 a hoàn
@@ -40,10 +38,6 @@ a nguỳ
 a nguỵ
 a nốt
 a phiến
-a posteriori
-a priori
-a roàng
-a rooi
 a sen
 a tiêng
 a ting
@@ -57,11 +51,7 @@ a vi
 a vương
 a xan
 a xen
-a xing
-a xit
 a xít
-a xít
-a xphan
 a yun
 à à
 à này
@@ -139,12 +129,6 @@ a yun
 ách vận
 ách yếu
 ạch đụi
-acid acetic
-acid amin
-acid béo
-acid carbonic
-acid chlorhydric
-acid nitric
 ai ai
 ai bảo
 ai bi
@@ -204,7 +188,6 @@ am đồng
 am hiểu
 am mây
 am pe
-am pli
 am pun
 am tự
 am tường
@@ -285,7 +268,6 @@ an khang
 an khánh
 an khê
 an khương
-an lạc
 an lạc
 an lành
 an lão
@@ -3017,6 +2999,7 @@ bể ái
 bể bầu
 bể bơi
 bể cạn
+bể cá
 bể chìm
 bể chuyện
 bể dâu
@@ -4908,6 +4891,9 @@ bữa phụ
 bữa qua
 bữa rày
 bữa sơ
+bữa sáng
+bữa tối
+bữa trưa
 bữa sớm
 bữa tê
 bữa tiệc
@@ -15686,6 +15672,7 @@ vọt ra
 đôi lúc
 đôi lứa
 đôi mách
+đôi mắt
 đôi mươi
 đôi nam
 đôi nữ
@@ -16728,6 +16715,7 @@ ga men
 ga ra
 ga ra
 ga rô
+ga tàu
 ga tô
 ga tô
 ga tuýt
@@ -17173,6 +17161,7 @@ ghê xương
 ghế bành
 ghế băng
 ghế bố
+ghế sofa
 ghế chao
 ghế dài
 ghế dựa
@@ -18317,6 +18306,7 @@ giường chiếu
 giường mối
 giường phản
 giường thờ
+giường ngủ
 glô côm
 glô côm
 glu cô
@@ -20301,6 +20291,7 @@ hô hố
 hô ngữ
 hô trớt
 hồ bi
+hồ bơi
 hồ cầm
 hồ chi
 hồ dễ
@@ -22659,6 +22650,7 @@ khu trục
 khu trừ
 khu uỷ
 khu ủy
+khu vườn
 khu vực
 khu xử
 khù khì
@@ -23371,6 +23363,7 @@ kỳ lân
 kỳ mục
 kỳ mưu
 kỳ ngộ
+kỳ nghỉ
 kỳ phùng
 kỳ quái
 kỳ quan
@@ -23816,6 +23809,7 @@ lang trung
 lang vườn
 lang y
 làng bẹp
+làng quê
 làng chơi
 làng mạc
 làng nghề
@@ -34966,6 +34960,7 @@ quyển lửa
 quyển nặng
 quyển nước
 quyển sắc
+quyển sách
 quyến cố
 quyến dỗ
 quyến dụ
@@ -36976,6 +36971,7 @@ sòng phẳng
 sòng sọc
 sõng soài
 sóng âm
+sóng biển
 sóng cả
 sóng cồn
 sóng đào
@@ -39577,7 +39573,6 @@ thành án
 thành bại
 thành bộ
 thành chung
-thành công
 thành công
 thành danh
 thành đạt
@@ -47298,7 +47293,6 @@ văn phạm
 văn pháp
 văn phẩm
 văn phong
-văn phong
 văn phòng
 văn phú
 văn phúc
@@ -49016,6 +49010,7 @@ xe ben
 xe bò
 xe ca
 xe châu
+xe buýt
 xe con
 xe cộ
 xe dây
@@ -51616,6 +51611,7 @@ bữa huân
 bức họa
 bức thư
 bức tranh
+bức tường
 bưởi chùm
 cá biển
 cà giựt
