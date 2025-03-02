@@ -92,11 +92,13 @@ def kiem_tra_tu_noi_tiep(tu_nhap, tu_truoc_do):
 # - seq: chuỗi các nước đi của AI (chỉ lưu nước đi của AI).
 #
 # Mục tiêu: Khi đến lượt của đối thủ (player) mà không còn nước đi hợp lệ.
-def a_star_search(last_word, used, turn, tu_map, depth_limit=6):
+def a_star_search(last_word, used, turn, tu_map, depth_limit=4):  # Giảm độ sâu tìm kiếm
     open_set = PriorityQueue()
     initial_state = (last_word, frozenset(used), turn, [])
     open_set.put((0, 0, initial_state))
     
+    best_sequence = []  # Lưu lại chuỗi tốt nhất tìm được
+
     while not open_set.empty():
         f, g, state = open_set.get()
         current_last, used_set, current_turn, seq = state
@@ -105,7 +107,7 @@ def a_star_search(last_word, used, turn, tu_map, depth_limit=6):
         
         # Nếu đến lượt của đối thủ và không có nước đi nào, AI giành chiến thắng.
         if current_turn == "player" and len(valid_moves) == 0:
-            return True, seq
+            return True, seq  # AI thắng
 
         # Nếu đến lượt của AI mà không còn nước đi, nhánh này không khả thi.
         if current_turn == "ai" and len(valid_moves) == 0:
@@ -114,20 +116,30 @@ def a_star_search(last_word, used, turn, tu_map, depth_limit=6):
         if g >= depth_limit:
             continue  # Giới hạn độ sâu tìm kiếm
         
+        # Thêm độ ngẫu nhiên vào nước đi của AI
+        random.shuffle(valid_moves)  # Trộn danh sách từ hợp lệ
+
         for move in valid_moves:
             new_used = set(used_set)
             new_used.add(move)
             new_last = tach_tu_cuoi(move)
             new_turn = "ai" if current_turn == "player" else "player"
             new_seq = seq.copy()
+
             if current_turn == "ai":
                 new_seq.append(move)
+
             new_state = (new_last, frozenset(new_used), new_turn, new_seq)
             new_g = g + 1
             new_f = new_g  # Ở đây dùng h = 0 (uniform-cost search)
             open_set.put((new_f, new_g, new_state))
-    
-    return False, []
+
+            # Lưu lại chuỗi nước đi dài nhất của AI tìm được
+            if len(new_seq) > len(best_sequence):
+                best_sequence = new_seq
+
+    # Nếu AI không tìm được nước đi để thắng ngay, nó sẽ chơi nước đi hợp lệ dài nhất
+    return False, best_sequence if best_sequence else []
 
 # --- HÀM CHÍNH CHƠI TRÒ CHƠI NỐI TỪ ---
 def choi_noi_tu():
