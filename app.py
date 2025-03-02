@@ -29,9 +29,17 @@ def index():
 
     # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước
     if "da_su_dung" not in session or not session["da_su_dung"]:
-        ai_first_word = random.choice(list(tu_vung))
-        session["da_su_dung"] = [ai_first_word]
-        session["current_word"] = ai_first_word
+        # Lọc danh sách từ phổ biến (chỉ lấy từ có 2-3 chữ)
+        tu_pho_bien = [word for word in tu_vung if len(word.split()) == 2]
+
+    if tu_pho_bien:
+        ai_first_word = random.choice(tu_pho_bien)  # Chọn từ phổ biến ngẫu nhiên
+    else:
+        ai_first_word = random.choice(list(tu_vung))  # Nếu không có, dùng cách cũ
+
+    session["da_su_dung"] = [ai_first_word]
+    session["current_word"] = ai_first_word
+
 
     if request.method == "POST":
         user_word = request.form.get("user_word", "").strip().lower()
