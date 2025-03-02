@@ -34,17 +34,7 @@ def index():
 
     # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước
     if "da_su_dung" not in session or not session["da_su_dung"]:
-    # Tạo danh sách các từ có thể nối tiếp nhiều nhất
-        best_words = [
-            word for word in tu_vung if any(w.startswith(word[-1]) for w in tu_vung)
-        ]
-
-    # Nếu danh sách trống (tức là không có từ nào nối tiếp được)
-    if not best_words:
-        ai_first_word = random.choice(list(tu_vung))  # Chọn ngẫu nhiên như cũ
-    else:
-        ai_first_word = max(best_words, key=lambda word: sum(w.startswith(word[-1]) for w in tu_vung))
-    
+        ai_first_word = "học"  # Từ mặc định luôn được chọn
     session["da_su_dung"] = [ai_first_word]
     session["current_word"] = ai_first_word
 
