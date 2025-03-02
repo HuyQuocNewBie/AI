@@ -34,9 +34,19 @@ def index():
 
     # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước
     if "da_su_dung" not in session or not session["da_su_dung"]:
-        ai_first_word = random.choice(list(tu_vung))
-        session["da_su_dung"] = [ai_first_word]
-        session["current_word"] = ai_first_word
+    # Tạo danh sách từ có nhiều từ nối tiếp nhất
+        best_words = sorted(
+            tu_vung, 
+            key=lambda word: len([w for w in tu_vung if w.startswith(word[-1])]), 
+            reverse=True
+        )
+
+    # Chọn từ có nhiều từ nối tiếp nhất (tránh từ khó)
+    ai_first_word = best_words[0] if best_words else random.choice(list(tu_vung))
+    
+    session["da_su_dung"] = [ai_first_word]
+    session["current_word"] = ai_first_word
+
 
     if request.method == "POST":
         user_word = request.form.get("user_word", "").strip().lower()
