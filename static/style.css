@@ -159,6 +159,7 @@ p {
     width: 80%; /* Tăng chiều rộng */
     max-width: 600px; /* Giới hạn chiều rộng tối đa */
     box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Tạo hiệu ứng bóng */
+    height: 25%;
 }
 
 .toast.show {
@@ -261,5 +262,108 @@ p {
 
     .timer {
         font-size: 18px;
+    }
+}
+/* 🔥 Custom Alert Box */
+.custom-alert {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 1000;
+    width: 30%;
+    height: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.custom-alert h2 {
+    margin-bottom: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 🎉 Icon trên tiêu đề */
+.custom-alert h2::before {
+    content: "⚠️"; /* Biểu tượng cảnh báo */
+    font-size: 36px;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.alert-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding-bottom: 10px;
+}
+
+.btn {
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.retry-btn {
+    background: linear-gradient(45deg, #1e90ff, #00bfff);
+}
+
+.home-btn {
+    background: linear-gradient(45deg, #ff416c, #ff4b2b);
+}
+
+.retry-btn:hover, .home-btn:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+/* 🌍 Responsive Laptop & Điện thoại */
+/* Màn laptop nhỏ hơn 1024px */
+@media (max-width: 1024px) {
+    .custom-alert {
+        width: 40%;
+        height: 35%;
+    }
+    .custom-alert h2 {
+        font-size: 22px;
+    }
+    .btn {
+        font-size: 16px;
+    }
+}
+
+/* Màn điện thoại */
+@media (max-width: 768px) {
+    .custom-alert {
+        width: 80%;
+        height: auto;
+        padding: 25px;
+    }
+    .custom-alert h2 {
+        font-size: 20px;
+    }
+    .btn {
+        font-size: 14px;
+        padding: 10px;
+    }
+    .alert-buttons {
+        flex-direction: column;
+        gap: 5px;
     }
 }

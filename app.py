@@ -14,8 +14,24 @@ from game_logic import (
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")
 
+# Đọc toàn bộ danh sách từ phổ biến từ file easy_words.txt
+def doc_file_tu_pho_bien():
+    try:
+        with open("easy_words.txt", "r", encoding="utf-8") as file:
+            tu_pho_bien = file.read().splitlines()
+        return tu_pho_bien  # Trả về toàn bộ danh sách từ phổ biến
+    except FileNotFoundError:
+        print("❌ Lỗi: File easy_words.txt không tồn tại!")
+    except Exception as e:
+        print(f"❌ Lỗi khi đọc file: {e}")
+    
+    return []
+
 # Load từ vựng khi ứng dụng khởi động
 tu_vung, tu_map = doc_file_tu_vung()
+
+# Load danh sách từ phổ thông
+danh_sach_tu_de = doc_file_tu_pho_bien()
 
 @app.route("/")
 def home():
@@ -34,9 +50,13 @@ def index():
 
     # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước
     if "da_su_dung" not in session or not session["da_su_dung"]:
-        ai_first_word = "học"  # Từ mặc định luôn được chọn
-    session["da_su_dung"] = [ai_first_word]
-    session["current_word"] = ai_first_word
+        if danh_sach_tu_de:  
+            ai_first_word = random.choice(danh_sach_tu_de)  # Chọn ngẫu nhiên một từ phổ biến
+        else:
+            ai_first_word = "học tập"  # Gán giá trị mặc định nếu danh sách trống
+
+        session["da_su_dung"] = [ai_first_word]
+        session["current_word"] = ai_first_word
 
     if request.method == "POST":
         user_word = request.form.get("user_word", "").strip().lower()
