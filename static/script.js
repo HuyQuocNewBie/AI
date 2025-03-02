@@ -13,7 +13,7 @@ function updateCountdown() {
         if (choice) {
             window.location.href = "/choinoitu?reset=true"; // Chơi lại
         } else {
-            window.location.href = "/"; // Trang chủ
+            window.location.href = "/reset-session"; // Trang chủ
         }
     }
 }

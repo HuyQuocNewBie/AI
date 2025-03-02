@@ -21,6 +21,11 @@ tu_vung, tu_map = doc_file_tu_vung()
 def home():
     return render_template("giaodien.html")
 
+@app.route('/reset-session')
+def reset_session():
+    session.clear()  # Xóa toàn bộ session
+    return redirect('/')  # Chuyển hướng về trang chủ
+
 @app.route("/choinoitu", methods=["GET", "POST"])
 def index():
     # Reset trò chơi nếu cần
