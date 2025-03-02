@@ -55,3 +55,9 @@ function showAlert(message, onRetry, onHome) {
         if (onHome) onHome();
     });
 }
+
+function updateScore(scoreChange) {
+    let scoreElement = document.getElementById("scoreValue");
+    let currentScore = parseInt(scoreElement.innerText);
+    scoreElement.innerText = currentScore + scoreChange;
+}

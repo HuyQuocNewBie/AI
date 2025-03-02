@@ -47,6 +47,10 @@ def index():
     # Reset trò chơi nếu cần
     if request.method == "GET" and request.args.get("reset") == "true":
         session.clear()  # Xóa toàn bộ session để reset trạng thái
+    
+    # Khởi tạo điểm số nếu chưa có
+    if "score" not in session:
+        session["score"] = 0
 
     # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước
     if "da_su_dung" not in session or not session["da_su_dung"]:
@@ -88,6 +92,9 @@ def index():
             session["da_su_dung"] = da_su_dung
             session["current_word"] = user_word  # Cập nhật từ hiện tại
 
+             # **Cập nhật điểm số** 🎯
+            session["score"] += random.randint(2, 5)  # Cộng điểm ngẫu nhiên từ 3-5
+
             # AI tìm từ tiếp theo
             tu_cuoi = tach_tu_cuoi(user_word)
             ai_win, ai_sequence = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map)
@@ -104,7 +111,8 @@ def index():
     return render_template("choinoitu.html", 
                            da_su_dung=session.get("da_su_dung", []), 
                            ket_qua=session.pop("ket_qua", None), 
-                           stop_timer=session.pop("stop_timer", False))
+                           stop_timer=session.pop("stop_timer", False),
+                           score=session.get("score", 0))
 
 if __name__ == "__main__":
     app.run(debug=True)
