@@ -92,7 +92,7 @@ def kiem_tra_tu_noi_tiep(tu_nhap, tu_truoc_do):
 # - seq: chuỗi các nước đi của AI (chỉ lưu nước đi của AI).
 #
 # Mục tiêu: Khi đến lượt của đối thủ (player) mà không còn nước đi hợp lệ.
-def a_star_search(last_word, used, turn, tu_map, depth_limit=3):  # Giảm độ sâu tìm kiếm
+def a_star_search(last_word, used, turn, tu_map, depth_limit=4):  # Giảm độ sâu tìm kiếm
     open_set = PriorityQueue()
     initial_state = (last_word, frozenset(used), turn, [])
     open_set.put((0, 0, initial_state))
@@ -119,7 +119,7 @@ def a_star_search(last_word, used, turn, tu_map, depth_limit=3):  # Giảm độ
             continue  # Giới hạn độ sâu tìm kiếm
 
         # **50% cơ hội AI chọn ngẫu nhiên thay vì tối ưu**
-        if random.random() < 0.5:  
+        if random.random() < 0.3:  
             move = random.choice(valid_moves)  # Chọn một từ bất kỳ
         else:
             move = valid_moves[0]  # Chọn từ đầu tiên trong danh sách giới hạn
