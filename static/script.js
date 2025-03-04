@@ -59,5 +59,5 @@ function showAlert(message, onRetry, onHome) {
 function updateScore(scoreChange) {
     let scoreElement = document.getElementById("scoreValue");
     let currentScore = parseInt(scoreElement.innerText);
-    scoreElement.innerText = currentScore + scoreChange;
+    scoreElement.innerText = Math.max(0, currentScore + scoreChange);
 }

@@ -46,7 +46,9 @@ def reset_session():
 def index():
     # Reset trò chơi nếu cần
     if request.method == "GET" and request.args.get("reset") == "true":
-        session.clear()  # Xóa toàn bộ session để reset trạng thái
+        score = session.get("score", 0)  # Giữ điểm cũ
+        session.clear()  # Xóa mọi dữ liệu khác nhưng vẫn giữ điểm
+        session["score"] = max(0, score - 2)  # Trừ 2 điểm khi chơi lại nhưng không âm
     
     # Khởi tạo điểm số nếu chưa có
     if "score" not in session:
