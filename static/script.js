@@ -61,3 +61,18 @@ function updateScore(scoreChange) {
     let currentScore = parseInt(scoreElement.innerText);
     scoreElement.innerText = Math.max(0, currentScore + scoreChange);
 }
+
+// Chuyển JSON string thành object trong script.js
+document.addEventListener('DOMContentLoaded', function() {
+    var winSound = document.getElementById('winSound');
+    var loseSound = document.getElementById('loseSound');
+
+    // Kiểm tra nếu gameData tồn tại
+    if (typeof gameData !== "undefined" && gameData.ketQua) {
+        if (gameData.aiThua) {
+            winSound.play();
+        } else {
+            loseSound.play();
+        }
+    }
+});
