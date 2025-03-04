@@ -37,8 +37,8 @@ function showAlert(message, onRetry, onHome) {
         <div class="alert-content">
             <h2>${message}</h2>
             <div class="alert-buttons">
-                <button class="btn retry-btn" onclick="window.location.href='/choinoitu?reset=true'">Chơi lại</button>
                 <button class="btn home-btn" onclick="window.location.href='/reset-session'">Trang chủ</button>
+                <button class="btn retry-btn" onclick="window.location.href='/choinoitu?reset=true'">Chơi lại</button>
             </div>
         </div>
     `;
