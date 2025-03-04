@@ -200,70 +200,7 @@ p {
     opacity: 0.8;
     transform: scale(1.05); /* Tạo hiệu ứng phóng to nhẹ khi hover */
 }
-/* Đáp ứng trên thiết bị nhỏ hơn 768px (điện thoại) */
-@media (max-width: 768px) {
-    body {
-        padding: 20px;
-        justify-content: flex-start; /* Đẩy nội dung lên trên */
-    }
 
-    .header img {
-        width: 80%; /* Giảm kích thước ảnh */
-    }
-
-    .game-box {
-        width: 90%;
-        margin-top: -200px;
-    }
-
-    .word-display {
-        font-size: 40px; /* Giảm kích thước chữ để vừa màn hình */
-    }
-
-    .input-box {
-        font-size: 20px;
-        padding: 10px;
-        width: 80%; /* Giảm chiều rộng input để vừa với màn hình */
-    }
-
-    .toast {
-        width: 90%; /* Đảm bảo hộp thông báo không quá to */
-        padding: 20px;
-    }
-
-    .toast-content h2 {
-        font-size: 22px;
-    }
-
-    .btn {
-        font-size: 16px;
-        padding: 10px 20px;
-    }
-
-    .toast-buttons {
-        flex-direction: column; /* Xếp nút dọc trên màn nhỏ */
-    }
-}
-
-/* Đáp ứng trên màn hình nhỏ hơn 480px (điện thoại cỡ nhỏ) */
-@media (max-width: 480px) {
-    .header h1 {
-        font-size: 24px; /* Giảm kích thước tiêu đề */
-    }
-
-    .word-display {
-        font-size: 32px;
-    }
-
-    .input-box {
-        font-size: 18px;
-        width: 100%;
-    }
-
-    .timer {
-        font-size: 18px;
-    }
-}
 /* 🔥 Custom Alert Box */
 .custom-alert {
     position: fixed;
@@ -333,41 +270,6 @@ p {
     transform: scale(1.05);
 }
 
-/* 🌍 Responsive Laptop & Điện thoại */
-/* Màn laptop nhỏ hơn 1024px */
-@media (max-width: 1024px) {
-    .custom-alert {
-        width: 40%;
-        height: 35%;
-    }
-    .custom-alert h2 {
-        font-size: 22px;
-    }
-    .btn {
-        font-size: 16px;
-    }
-}
-
-/* Màn điện thoại */
-@media (max-width: 768px) {
-    .custom-alert {
-        width: 80%;
-        height: auto;
-        padding: 25px;
-    }
-    .custom-alert h2 {
-        font-size: 20px;
-    }
-    .btn {
-        font-size: 14px;
-        padding: 10px;
-    }
-    .alert-buttons {
-        flex-direction: column;
-        gap: 5px;
-    }
-}
-
 /* 🔥 Hiển thị điểm số góc trên phải */
 .score {
     position: absolute;
@@ -379,4 +281,203 @@ p {
     background: rgba(0, 0, 0, 0.5);
     padding: 10px 20px;
     border-radius: 10px;
+}
+
+/* Responsive cho các thiết bị */
+/* Desktop (PC) */
+@media screen and (min-width: 1024px) {
+    .header h1 {
+        font-size: 40px;
+    }
+    
+    .header img {
+        width: 400px;
+    }
+    
+    .game-box {
+        width: 450px;
+        margin-top: -200px;
+    }
+    
+    .word-display {
+        font-size: 72px;
+    }
+    
+    .input-box {
+        width: 80%;
+        font-size: 30px;
+    }
+}
+
+/* Laptop */
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+    .header h1 {
+        font-size: 36px;
+    }
+    
+    .header img {
+        width: 350px;
+    }
+    
+    .game-box {
+        width: 400px;
+        margin-top: -250px;
+    }
+    
+    .word-display {
+        font-size: 65px;
+    }
+    
+    .input-box {
+        width: 90%;
+        font-size: 28px;
+    }
+}
+
+/* Tablet */
+@media screen and (min-width: 481px) and (max-width: 767px) {
+    .header h1 {
+        font-size: 32px;
+    }
+    
+    .header img {
+        width: 300px;
+    }
+    
+    .game-box {
+        width: 350px;
+        margin-top: -300px;
+    }
+    
+    .word-display {
+        font-size: 55px;
+    }
+    
+    .input-box {
+        width: 95%;
+        font-size: 25px;
+    }
+    
+    .toast {
+        width: 90%;
+        height: 30%;
+    }
+    
+    .custom-alert {
+        width: 80%;
+        height: 35%;
+    }
+}
+
+/* Mobile */
+@media screen and (max-width: 480px) {
+    body {
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    .header {
+        padding: 10px;
+    }
+
+    .header h1 {
+        font-size: clamp(20px, 5vw, 28px);
+        margin-bottom: 5px;
+    }
+    
+    .header img {
+        width: clamp(200px, 60vw, 250px);
+        margin-bottom: 15px;
+    }
+    
+    .game-box {
+        width: 90%;
+        max-width: 300px;
+        margin-top: -200px;
+        padding: 15px;
+    }
+    
+    .word-display {
+        font-size: clamp(35px, 10vw, 45px);
+        margin: 15px 0;
+    }
+    
+    .input-box {
+        width: 90%;
+        font-size: clamp(18px, 5vw, 22px);
+        margin-top: 40px;
+        padding: 10px;
+    }
+    
+    .timer {
+        font-size: clamp(16px, 4vw, 20px);
+        margin-top: 10px;
+    }
+    
+    .toast {
+        width: 90%;
+        max-width: 320px;
+        height: auto;
+        min-height: 200px;
+        padding: 15px;
+    }
+    
+    .toast-content h2 {
+        font-size: clamp(20px, 5vw, 24px);
+        margin-bottom: 15px;
+    }
+    
+    .custom-alert {
+        width: 90%;
+        max-width: 320px;
+        height: auto;
+        min-height: 200px;
+        padding: 15px;
+    }
+    
+    .custom-alert h2 {
+        font-size: clamp(18px, 4vw, 20px);
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        font-size: clamp(14px, 4vw, 16px);
+        min-width: 100px;
+    }
+    
+    .score {
+        font-size: clamp(16px, 4vw, 20px);
+        padding: 6px 12px;
+        top: 10px;
+        right: 10px;
+    }
+
+    .game-container {
+        padding-top: 20px;
+    }
+
+    .toast-buttons, .alert-buttons {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}
+
+/* Small Mobile */
+@media screen and (max-width: 320px) {
+    .game-box {
+        margin-top: -150px;
+    }
+
+    .input-box {
+        margin-top: 30px;
+    }
+
+    .toast, .custom-alert {
+        min-height: 180px;
+    }
 }
