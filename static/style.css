@@ -133,17 +133,7 @@ p {
         transform: rotate(360deg);
     }
 }
-.start-button {
-    display: inline-block;
-    margin-top: 20px;
-    padding: 10px 20px;
-    font-size: 18px;
-    color: white;
-    background: #ff6b81;
-    border: none;
-    border-radius: 5px;
-    text-decoration: none;
-}
+
 .toast {
     position: fixed;
     top: 50%;
@@ -420,31 +410,59 @@ p {
         height: auto;
         min-height: 200px;
         padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .toast-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
     }
     
     .toast-content h2 {
-        font-size: clamp(20px, 5vw, 24px);
-        margin-bottom: 15px;
+        font-size: clamp(18px, 5vw, 24px);
+        margin-bottom: 10px;
+        text-align: center;
+        line-height: 1.4;
     }
     
-    .custom-alert {
-        width: 90%;
-        max-width: 320px;
-        height: auto;
-        min-height: 200px;
-        padding: 15px;
-    }
-    
-    .custom-alert h2 {
-        font-size: clamp(18px, 4vw, 20px);
+    .toast-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        margin-top: 10px;
     }
     
     .btn {
-        padding: 8px 16px;
-        font-size: clamp(14px, 4vw, 16px);
-        min-width: 100px;
+        width: 100%;
+        padding: 12px 20px;
+        font-size: clamp(16px, 4vw, 18px);
+        border-radius: 8px;
+        margin: 0;
     }
-    
+
+    /* Small Mobile */
+    @media screen and (max-width: 320px) {
+        .toast {
+            width: 95%;
+            min-height: 180px;
+            padding: 12px;
+        }
+
+        .toast-content h2 {
+            font-size: clamp(16px, 4vw, 20px);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            font-size: clamp(14px, 3.5vw, 16px);
+        }
+    }
+
     .score {
         font-size: clamp(16px, 4vw, 20px);
         padding: 6px 12px;
@@ -467,17 +485,11 @@ p {
     }
 }
 
-/* Small Mobile */
-@media screen and (max-width: 320px) {
-    .game-box {
-        margin-top: -150px;
-    }
+.continue-btn {
+    background: linear-gradient(45deg, #00b894, #00cec9);
+}
 
-    .input-box {
-        margin-top: 30px;
-    }
-
-    .toast, .custom-alert {
-        min-height: 180px;
-    }
+.continue-btn:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
 }

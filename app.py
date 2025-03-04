@@ -45,11 +45,17 @@ def reset_session():
 @app.route("/choinoitu", methods=["GET", "POST"])
 def index():
     # Reset trò chơi nếu cần
-    if request.method == "GET" and request.args.get("reset") == "true":
-        score = session.get("score", 0)  # Giữ điểm cũ
-        session.clear()  # Xóa mọi dữ liệu khác nhưng vẫn giữ điểm
-        session["score"] = max(0, score - 2)  # Trừ 2 điểm khi chơi lại nhưng không âm
-    
+    if request.method == "GET":
+        if request.args.get("reset") == "true":
+            score = session.get("score", 0)
+            session.clear()
+            session["score"] = max(0, score - 2)
+        elif request.args.get("continue") == "true":
+            score = session.get("score", 0)
+            session.clear()
+            session["score"] = score + random.randint(2, 5)  # Cộng điểm khi thắng AI
+            session["ai_thua"] = False  # Reset trạng thái AI thua
+        
     # Khởi tạo điểm số nếu chưa có
     if "score" not in session:
         session["score"] = 0
@@ -57,9 +63,9 @@ def index():
     # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước
     if "da_su_dung" not in session or not session["da_su_dung"]:
         if danh_sach_tu_de:  
-            ai_first_word = random.choice(danh_sach_tu_de)  # Chọn ngẫu nhiên một từ phổ biến
+            ai_first_word = random.choice(danh_sach_tu_de)
         else:
-            ai_first_word = "học tập"  # Gán giá trị mặc định nếu danh sách trống
+            ai_first_word = "học tập"
 
         session["da_su_dung"] = [ai_first_word]
         session["current_word"] = ai_first_word
@@ -73,48 +79,56 @@ def index():
         if len(user_word.split()) < 2:
             session["ket_qua"] = "Bạn đã nhập 1 từ. Bạn thua!"
             session["stop_timer"] = True
+            session["ai_thua"] = False
         elif not kiem_tra_tu_nhap(user_word):
             session["ket_qua"] = "Từ nhập vào phải có ít nhất 2 từ. Bạn thua!"
             session["stop_timer"] = True
+            session["ai_thua"] = False
         elif not kiem_tra_tu_hop_le(user_word):
             session["ket_qua"] = "Từ nhập vào không hợp lệ. Bạn thua!"
             session["stop_timer"] = True
+            session["ai_thua"] = False
         elif not kiem_tra_tu_trong_danh_sach(user_word, tu_vung):
             session["ket_qua"] = "Từ nhập vào không có trong danh sách từ vựng. Bạn thua!"
             session["stop_timer"] = True
+            session["ai_thua"] = False
         elif user_word in da_su_dung:
             session["ket_qua"] = "Từ này đã được sử dụng. Bạn thua!"
             session["stop_timer"] = True
+            session["ai_thua"] = False
         elif not kiem_tra_tu_noi_tiep(user_word, last_word):
             session["ket_qua"] = f"Từ nhập vào phải bắt đầu bằng '{tach_tu_cuoi(last_word)}'. Bạn thua!"
             session["stop_timer"] = True
+            session["ai_thua"] = False
         else:
             # Người chơi nhập hợp lệ
             da_su_dung.append(user_word)
             session["da_su_dung"] = da_su_dung
-            session["current_word"] = user_word  # Cập nhật từ hiện tại
+            session["current_word"] = user_word
 
-             # **Cập nhật điểm số** 🎯
-            session["score"] += random.randint(2, 5)  # Cộng điểm ngẫu nhiên từ 3-5
+            # Cập nhật điểm số
+            session["score"] += random.randint(2, 5)
 
             # AI tìm từ tiếp theo
             tu_cuoi = tach_tu_cuoi(user_word)
             ai_win, ai_sequence = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map)
 
             if ai_win and ai_sequence:
-                ai_move = ai_sequence[0]  # Lấy từ AI chọn
+                ai_move = ai_sequence[0]
                 da_su_dung.append(ai_move)
                 session["da_su_dung"] = da_su_dung
-                session["current_word"] = ai_move  # Cập nhật từ hiện tại sau lượt AI
+                session["current_word"] = ai_move
             else:
                 session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
                 session["stop_timer"] = True
+                session["ai_thua"] = True
 
     return render_template("choinoitu.html", 
-                           da_su_dung=session.get("da_su_dung", []), 
-                           ket_qua=session.pop("ket_qua", None), 
-                           stop_timer=session.pop("stop_timer", False),
-                           score=session.get("score", 0))
+                         da_su_dung=session.get("da_su_dung", []), 
+                         ket_qua=session.pop("ket_qua", None), 
+                         stop_timer=session.pop("stop_timer", False),
+                         ai_thua=session.pop("ai_thua", False),
+                         score=session.get("score", 0))
 
 if __name__ == "__main__":
     app.run(debug=True)

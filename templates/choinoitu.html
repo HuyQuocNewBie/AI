@@ -32,7 +32,11 @@
         <h2>{{ ket_qua }}</h2>
         <div class="toast-buttons">
           <button class="btn home-btn" onclick="window.location.href='/reset-session'">Trang chủ</button>
-          <button class="btn retry-btn" onclick="window.location.href='/choinoitu?reset=true'">Chơi lại</button>
+          {% if ai_thua %}
+            <button class="btn continue-btn" onclick="window.location.href='/choinoitu?continue=true'">Chơi tiếp</button>
+          {% else %}
+            <button class="btn retry-btn" onclick="window.location.href='/choinoitu?reset=true'">Chơi lại</button>
+          {% endif %}
         </div>
       </div>
     </div>
