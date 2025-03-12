@@ -6784,8 +6784,6 @@ cậy cục
 cậy tài
 cậy thế
 cậy trông
-cd rom
-centi 
 cha anh
 cha cả
 cha chả
@@ -14336,7 +14334,6 @@ báo đài
 đẻ non
 đẻ rơi
 đẻ trứng
-đeca 
 đem đầu
 đem lòng
 đem mình
@@ -14452,7 +14449,6 @@ báo đài
 đẹp ý
 đét xe
 đẹt đít
-đexi 
 đê biển
 đê bối
 đê ca
@@ -17748,6 +17744,7 @@ giao tế
 giao thầu
 giao thiệp
 giao thoa
+thoa trùng
 giao thông
 giao thời
 giao thừa
@@ -23140,8 +23137,6 @@ kiếu bệnh
 kiếu từ
 kiệu hoa
 kiệu tay
-kilo 
-kilooat giờ
 kim anh
 kim bảng
 kim băng
@@ -36877,6 +36872,7 @@ soi xét
 sỏi cát
 sỏi đời
 sỏi phân
+sỏi mũi
 sỏi ruột
 sõi đời
 sói biển
@@ -37355,7 +37351,6 @@ sơn phúc
 sơn phước
 sơn quang
 sơn quân
-sơn sốc
 sơn sống
 sơn tăng
 sơn tường
@@ -50415,8 +50410,6 @@ dầy cộp
 dầy dạn
 dầy dặn
 dầy đặc
-deca 
-deci 
 dễ bề
 di ảnh
 di biểu
@@ -50563,8 +50556,6 @@ giáo lý
 giao thức
 giầu mạnh
 giầu sụ
-giấy carbon
-giga 
 giỗ kị
 giỗ kỵ
 giông bão
@@ -50600,7 +50591,6 @@ hát hổng
 hăng gô
 hầu khắp
 hầu phòng
-hecto 
 heo héo
 hệ si
 hết biết
@@ -50842,13 +50832,11 @@ mặt tiền
 mận cơm
 mận hậu
 mấy lại
-mega 
 men sứ
 mê lú
 mệt nghỉ
 mỉa móc
 miệt vườn
-milli 
 mít tịt
 mòn vẹt
 moóc xơ
@@ -53217,7 +53205,6 @@ sở tiên
 sơ vin
 sở vương
 sới bạc
-sơn diệm
 sục cặc
 sục cu
 sun phát
@@ -54056,7 +54043,6 @@ tấm thảm
 tầng lầu
 vách tường
 xe cứu
-xe cứu hỏa
 đài truyền
 đèn tín
 đèn đường
@@ -54384,7 +54370,6 @@ phòng trưng
 ruộng bậc
 sinh lời
 suối trong
-sân thi đấu
 sông dài
 sương mỏng
 sương nhẹ
@@ -54444,14 +54429,10 @@ bãi đỗ
 bò nướng
 bóng sân
 bông tuyết
-bản đồ số
 bếp nấu
 bộ chén
 bộ loa
-camera IP
 chợ sách
-clip dài
-clip ngắn
 cuốn phim
 cà muối
 cá sốt
@@ -54459,11 +54440,9 @@ cơm niêu
 cảng biển
 cảnh quay
 cốc sứ
-cổng USB
 cửa bếp
 cửa hầm
 dao sắc
-game online
 giao hàng
 giá đỡ
 giỏ đựng
@@ -54626,11 +54605,9 @@ phích sạc
 phòng vé
 phấn trắng
 quán vặt
-radio FM
 robot tự
 ruộng mỡ
 ruộng trồng
-sinh tố bơ
 suối nhỏ
 sách truyện
 sáng gió
@@ -54639,7 +54616,6 @@ sân golf
 sân tập
 sóng vỗ
 sương mờ
-sạc pin
 sắc hồng
 sống trọn
 sốt cao
@@ -54748,7 +54724,6 @@ nụ xuân
 rượt đuổi
 rừng than
 siêu bền
-sô cô la
 săn mồi
 sương hồng
 thuyền chèo
@@ -54769,8 +54744,6 @@ xem phim
 đọc báo
 đọc sách
 đồi vắng
-CPU chính
-RAM máy
 TV cáp
 biển cạn
 báo mạng
@@ -54779,7 +54752,6 @@ bông lan
 bún nước
 canh chua
 canh rau
-cà phê sữa
 cây bách
 cây sồi
 cây thông
@@ -54796,11 +54768,6 @@ dùng thử
 dải sáng
 dễ kiếm
 dễ tìm
-file ảnh
-game mobile
-giày cao gót
-giày slip
-giày thể thao
 gió mơn
 giặt đồ
 giọt mưa
@@ -54827,9 +54794,6 @@ lẩu dê
 lẩu thái
 micro tròn
 mây xốp
-mũ bảo hiểm
-mũ len dày
-mạng LAN
 mời khách
 nem cuốn
 nhà khoa học
@@ -54884,12 +54848,8 @@ váy liền
 ví da
 vườn trăng
 vầng trăng
-wifi nhanh
 ánh bạc
 ánh sao
-áo blazer
-áo cardigan
-áo sơ mi
 đêm sao
 đêm se
 đường tăm
@@ -54901,7 +54861,7 @@ wifi nhanh
 đổ xăng
 đủ đầy
 ủi áo
-Tết vui
+tết vui
 an lòng
 bãi đá
 bìa mềm
@@ -54920,24 +54880,18 @@ chơi cờ
 chơi game
 chạy xe
 chải tóc
-cloud data
 cuốn sổ
-cà phê đen
 cá hấp
 cát trắng
 cân chỉnh
 cười rạng
 cười to
 cảng hàng
-cổng usb
 cửa gạt
-data stream
 dậy sớm
 giao mùa
-giày sneaker
 giá treo
 gió cuốn
-giấy note
 gà nướng
 góc nhỏ
 gõ phím
@@ -55117,7 +55071,6 @@ khu rừng
 kệ sách
 luyến nhớ
 làng cổ
-lò vi sóng
 lối về
 mai đến
 muỗng canh
@@ -55139,7 +55092,6 @@ ngắm trăng
 ngồi làm
 ngồi nghỉ
 nhãn dán
-niềm tự hào
 ném bóng
 núi mây
 núi nhỏ
@@ -55626,3 +55578,42 @@ gỗ đệm
 gỗ đỡ
 gỗ đục
 gỗ ốp
+bỏng gạo
+túc xá
+trừ tiền
+cát lún
+buret khí
+hyđro axit
+siêu lớp
+sự rỗng
+rầm giả
+tia điện
+đóm lửa
+cách làm
+chèn đường
+gas hút
+nhánh ống
+ống nhún
+mã dạng
+thời chết
+gí cố
+bánh số
+băng máy
+doa lại
+mặt đầu
+sẫm màu
+màu xanh
+giấy viết
+mướn xe
+treo máy
+đồng thỏi
+thỏi vàng
+vàng đồng
+lò cái
+kẽm lá
+goòng máy
+ảnh con
+đất mượn
+tiếng người
+hoa lửa
+gờ khuôn
