@@ -93,16 +93,18 @@ def kiem_tra_tu_noi_tiep(tu_nhap, tu_truoc_do):
 #
 # Mục tiêu: Khi đến lượt của đối thủ (player) mà không còn nước đi hợp lệ.
 def a_star_search(last_word, used, turn, tu_map, depth_limit=3):  # Giảm độ sâu tìm kiếm
-    open_set = PriorityQueue()
-    initial_state = (last_word, frozenset(used), turn, [])
-    open_set.put((0, 0, initial_state))
+    open_set = PriorityQueue() # Hàng đợi ưu tiên
+    initial_state = (last_word, frozenset(used), turn, []) # Trạng thái ban đầu
+    open_set.put((0, 0, initial_state)) # (f, g, state)
     
     best_sequence = []  # Lưu lại chuỗi tốt nhất tìm được
 
+    # Duyệt qua các trạng thái trong hàng đợi ưu tiên
     while not open_set.empty():
-        f, g, state = open_set.get()
-        current_last, used_set, current_turn, seq = state
+        f, g, state = open_set.get()   # Lấy trạng thái có f nhỏ nhất
+        current_last, used_set, current_turn, seq = state # Trích xuất thông tin từ trạng thái
 
+        # Tìm tất cả các nước đi hợp lệ từ từ cuối của trạng thái hiện tại
         valid_moves = tim_tat_ca_tu_bat_dau_bang(current_last, tu_map, list(used_set))
         
         # Nếu đến lượt của đối thủ và không có nước đi nào, AI giành chiến thắng.
@@ -114,29 +116,31 @@ def a_star_search(last_word, used, turn, tu_map, depth_limit=3):  # Giảm độ
             continue
         
         if g >= depth_limit:
-            continue  # Giới hạn độ sâu tìm kiếm
+            continue  # Biến g đại diện cho số bước đã đi. Nếu 𝑔 g đạt đến depth_limit (giới hạn độ sâu), nhánh tìm kiếm hiện tại dừng lại (không mở rộng thêm).
         
         # Thêm độ ngẫu nhiên vào nước đi của AI
         random.shuffle(valid_moves)  # Trộn danh sách từ hợp lệ
 
+        # Mở rộng các trạng thái con từ trạng thái hiện tại
         for move in valid_moves:
-            new_used = set(used_set)
-            new_used.add(move)
-            new_last = tach_tu_cuoi(move)
-            new_turn = "ai" if current_turn == "player" else "player"
-            new_seq = seq.copy()
+            new_used = set(used_set) # Tạo một bản sao mới của tập hợp từ đã sử dụng
+            new_used.add(move) # Thêm từ mới vào tập hợp từ đã sử dụng
+            new_last = tach_tu_cuoi(move) # Cập nhật từ cuối của nước đi mới
+            new_turn = "ai" if current_turn == "player" else "player" # Đổi lượt chơi
+            new_seq = seq.copy() # Tạo một bản sao mới của chuỗi nước đi
 
             if current_turn == "ai":
-                new_seq.append(move)
+                new_seq.append(move) # Thêm nước đi mới vào chuỗi nước đi
 
+            # Tạo trạng thái mới
             new_state = (new_last, frozenset(new_used), new_turn, new_seq)
-            new_g = g + 1
+            new_g = g + 1 # Tăng biến g lên 1 đơn vị
             new_f = new_g  # Ở đây dùng h = 0 (uniform-cost search)
-            open_set.put((new_f, new_g, new_state))
+            open_set.put((new_f, new_g, new_state)) # Thêm trạng thái mới vào hàng đợi ưu tiên
 
             # Lưu lại chuỗi nước đi dài nhất của AI tìm được
             if len(new_seq) > len(best_sequence):
-                best_sequence = new_seq
+                best_sequence = new_seq # Cập nhật chuỗi nước đi tốt nhất
 
     # Nếu AI không tìm được nước đi để thắng ngay, nó sẽ chơi nước đi hợp lệ dài nhất
     return False, best_sequence if best_sequence else []
