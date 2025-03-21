@@ -34,37 +34,37 @@ def tim_tat_ca_tu_bat_dau_bang(tu, tu_map, da_su_dung):
         return []
     return [phrase for phrase in tu_map[tu] if phrase not in da_su_dung]
 
-# Hàm đánh giá độ khó của từ (dùng trong chiến lược greedy)
-def danh_gia_do_kho(tu, tu_map, da_su_dung):
-    tu_cuoi = tach_tu_cuoi(tu)
-    if not tu_cuoi:
-        return 0
-    danh_sach_phu_hop = tim_tat_ca_tu_bat_dau_bang(tu_cuoi, tu_map, da_su_dung)
-    so_luong_tu_noi_tiep = len(danh_sach_phu_hop)
-    if so_luong_tu_noi_tiep == 0:
-        return -1  # Từ “tử đường”
-    return so_luong_tu_noi_tiep
+# # Hàm đánh giá độ khó của từ (dùng trong chiến lược greedy)
+# def danh_gia_do_kho(tu, tu_map, da_su_dung):
+#     tu_cuoi = tach_tu_cuoi(tu)
+#     if not tu_cuoi:
+#         return 0
+#     danh_sach_phu_hop = tim_tat_ca_tu_bat_dau_bang(tu_cuoi, tu_map, da_su_dung)
+#     so_luong_tu_noi_tiep = len(danh_sach_phu_hop)
+#     if so_luong_tu_noi_tiep == 0:
+#         return -1  # Từ “tử đường”
+#     return so_luong_tu_noi_tiep
 
-# Hàm chọn từ nối tiếp tối ưu theo chiến lược greedy
-def chon_tu_toi_uu(danh_sach_phu_hop, tu_map, da_su_dung):
-    tu_toi_uu = None
-    diem_cao_nhat = -float('inf')
-    tu_don_nguoi_choi_vao_the_bi = None
+# # Hàm chọn từ nối tiếp tối ưu theo chiến lược greedy
+# def chon_tu_toi_uu(danh_sach_phu_hop, tu_map, da_su_dung):
+#     tu_toi_uu = None
+#     diem_cao_nhat = -float('inf')
+#     tu_don_nguoi_choi_vao_the_bi = None
 
-    for phrase in danh_sach_phu_hop:
-        diem = danh_gia_do_kho(phrase, tu_map, da_su_dung)
-        if diem > diem_cao_nhat:
-            diem_cao_nhat = diem
-            tu_toi_uu = phrase
-        # Kiểm tra xem từ này có “dồn” đối thủ vào thế bế không
-        tu_cuoi = tach_tu_cuoi(phrase)
-        danh_sach_phu_hop_nguoi_choi = tim_tat_ca_tu_bat_dau_bang(tu_cuoi, tu_map, da_su_dung + [phrase])
-        if len(danh_sach_phu_hop_nguoi_choi) == 0:
-            tu_don_nguoi_choi_vao_the_bi = phrase
+#     for phrase in danh_sach_phu_hop:
+#         diem = danh_gia_do_kho(phrase, tu_map, da_su_dung)
+#         if diem > diem_cao_nhat:
+#             diem_cao_nhat = diem
+#             tu_toi_uu = phrase
+#         # Kiểm tra xem từ này có “dồn” đối thủ vào thế bế không
+#         tu_cuoi = tach_tu_cuoi(phrase)
+#         danh_sach_phu_hop_nguoi_choi = tim_tat_ca_tu_bat_dau_bang(tu_cuoi, tu_map, da_su_dung + [phrase])
+#         if len(danh_sach_phu_hop_nguoi_choi) == 0:
+#             tu_don_nguoi_choi_vao_the_bi = phrase
 
-    if tu_don_nguoi_choi_vao_the_bi:
-        return tu_don_nguoi_choi_vao_the_bi
-    return tu_toi_uu
+#     if tu_don_nguoi_choi_vao_the_bi:
+#         return tu_don_nguoi_choi_vao_the_bi
+#     return tu_toi_uu
 
 # Các hàm kiểm tra tính hợp lệ của từ nhập
 def kiem_tra_tu_nhap(tu):
@@ -185,9 +185,9 @@ def choi_noi_tu():
             if win and seq:
                 tu_ke_tiep = seq[0]
                 print(f"AI nối (A*): {tu_ke_tiep}")
-            else:
-                tu_ke_tiep = chon_tu_toi_uu(danh_sach_phu_hop, tu_map, da_su_dung)
-                print(f"AI nối (Greedy): {tu_ke_tiep}")
+            # else:
+            #     tu_ke_tiep = chon_tu_toi_uu(danh_sach_phu_hop, tu_map, da_su_dung)
+            #     print(f"AI nối (Greedy): {tu_ke_tiep}")
             da_su_dung.append(tu_ke_tiep)
         else:
             print("AI không tìm được từ phù hợp. Bạn thắng!")
