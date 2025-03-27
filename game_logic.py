@@ -92,7 +92,7 @@ def kiem_tra_tu_noi_tiep(tu_nhap, tu_truoc_do):
 # - seq: chuỗi các nước đi của AI (chỉ lưu nước đi của AI).
 #
 # Mục tiêu: Khi đến lượt của đối thủ (player) mà không còn nước đi hợp lệ.
-def a_star_search(last_word, used, turn, tu_map, depth_limit=3):  # Giảm độ sâu tìm kiếm
+def a_star_search(last_word, used, turn, tu_map, depth_limit=3):
     open_set = PriorityQueue() # Hàng đợi ưu tiên
     initial_state = (last_word, frozenset(used), turn, []) # Trạng thái ban đầu
     open_set.put((0, 0, initial_state)) # (f, g, state)
@@ -185,7 +185,7 @@ def choi_noi_tu():
         danh_sach_phu_hop = tim_tat_ca_tu_bat_dau_bang(tu_cuoi, tu_map, da_su_dung)
         
         if danh_sach_phu_hop:
-            win, seq = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map, depth_limit=6)
+            win, seq = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map, depth_limit=3)
             if win and seq:
                 tu_ke_tiep = seq[0]
                 print(f"AI nối (A*): {tu_ke_tiep}")

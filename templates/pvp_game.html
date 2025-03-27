@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vua Nối Từ - PvP</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='Image/icon.png') }}"
+    />
+    <style>
+      .opponent-info {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .opponent-name {
+        font-weight: bold;
+      }
+
+      .opponent-score {
+        color: #ffcc00;
+      }
+
+      .turn-indicator {
+        position: absolute;
+        top: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: {% if game.current_turn == current_player %}rgba(0, 255, 0, 0.7){% else %}rgba(255, 0, 0, 0.7){% endif %};
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 0.7;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      .game-result {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        width: 80%;
+        max-width: 500px;
+      }
+
+      .result-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: {% if game.winner == current_player %}#00cc00{% else %}#ff0000{% endif %};
+      }
+
+      .result-message {
+        font-size: 18px;
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .points-added {
+        font-size: 20px;
+        font-weight: bold;
+        color: #ff6b6b;
+        margin-bottom: 20px;
+        animation: scale-up 1s ease;
+      }
+
+      @keyframes scale-up {
+        0% {
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .result-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+      }
+
+      .result-button {
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        color: white;
+        transition: all 0.3s ease;
+      }
+
+      .home-button {
+        background: linear-gradient(45deg, #ff416c, #ff4b2b);
+      }
+
+      .play-again-button {
+        background: linear-gradient(45deg, #1e90ff, #00bfff);
+      }
+
+      .result-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <!-- Hiển thị tên người chơi với nút đổi tên -->
+      <div class="player-name-container">
+        <div class="player-name">{{ player_name }}</div>
+        <button
+          class="change-name-icon"
+          onclick="showChangeNameForm()"
+          title="Đổi tên"
+        >
+          ✏️
+        </button>
+      </div>
+
+      <!-- Hiển thị thông tin đối thủ -->
+      <div class="opponent-info">
+        <span
+          >Đối thủ:
+          <span class="opponent-name">{{ game[opponent].name }}</span></span
+        >
+        <span
+          >Điểm:
+          <span class="opponent-score">{{ game[opponent].score }}</span></span
+        >
+      </div>
+
+      <!-- Hiển thị lượt chơi -->
+      <div class="turn-indicator">
+        {% if game.current_turn == current_player %}Lượt của bạn{% else %}Lượt
+        của đối thủ{% endif %}
+      </div>
+
+      <div class="score">
+        Score: <span id="scoreValue">{{ game[current_player].score }}</span>
+      </div>
+
+      <!-- Hiển thị chế độ chơi -->
+      <div class="game-mode-badge pvp-mode">PvP</div>
+
+      <!-- Biểu tượng bảng xếp hạng -->
+      <div class="leaderboard-icon" onclick="toggleLeaderboard()">
+        <img
+          src="{{ url_for('static', filename='Image/trophy.png') }}"
+          alt="Bảng xếp hạng"
+        />
+      </div>
+
+      <div class="timer">
+        Thời gian: <span id="countdown">{{ game.time_limit }}</span> giây
+      </div>
+
+      <div class="word-display" id="currentWord">{{ game.current_word }}</div>
+
+      <form method="POST" id="wordForm">
+        <input
+          type="text"
+          class="input-box"
+          name="user_word"
+          id="userWordInput"
+          autofocus
+          {%
+          if
+          game.current_turn
+          !="current_player"
+          or
+          game.game_over
+          %}disabled{%
+          endif
+          %}
+        />
+      </form>
+
+      <!-- Hiển thị xếp hạng và thanh tiến trình -->
+      <div class="rank-container">
+        <div class="current-rank">{{ rank.current }}</div>
+        <div class="progress-bar-container">
+          <div
+            class="progress-bar"
+            style="width: {{ rank.progress }}%; background-color: {{ rank.color }};"
+          ></div>
+        </div>
+        <div class="next-rank">{{ rank.next }}</div>
+      </div>
+    </div>
+
+    <!-- Form đổi tên (ẩn mặc định) -->
+    <div id="changeNameModal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal" onclick="hideChangeNameForm()">&times;</span>
+        <h2>Đổi tên người chơi</h2>
+        <form
+          action="{{ url_for('change_name') }}"
+          method="POST"
+          class="name-form"
+        >
+          <div class="input-group">
+            <label for="new_player_name">Tên mới:</label>
+            <input
+              type="text"
+              id="new_player_name"
+              name="player_name"
+              required
+              placeholder="Nhập tên mới"
+              value=""
+            />
+            <input type="hidden" name="from_game" value="true" />
+          </div>
+          <button type="submit" class="start-button">Lưu tên mới</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bảng xếp hạng -->
+    <div id="leaderboard" class="leaderboard-panel">
+      <div class="leaderboard-header">
+        <h2>Bảng xếp hạng</h2>
+        <span class="close-btn" onclick="toggleLeaderboard()">×</span>
+      </div>
+      <div class="leaderboard-content">
+        <table id="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Hạng</th>
+              <th>Tên</th>
+              <th>Điểm</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body">
+            <!-- Dữ liệu bảng xếp hạng sẽ được thêm vào đây bằng JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Hiển thị kết quả game khi kết thúc -->
+    {% if game.game_over %}
+    <div class="game-result">
+      <h2 class="result-title">
+        {% if game.winner == current_player %}Chúc mừng! Bạn đã thắng!{% else
+        %}Rất tiếc! Bạn đã thua!{% endif %}
+      </h2>
+
+      {% if game.winner != current_player and game.lose_reason %}
+      <p class="result-message">{{ game.lose_reason }}</p>
+      {% endif %} {% if rank_updated and points_added > 0 %}
+      <div class="points-added">+{{ points_added }} điểm xếp hạng!</div>
+      {% endif %}
+
+      <div class="result-buttons">
+        <button
+          class="result-button home-button"
+          onclick="window.location.href='/';"
+        >
+          Trang chủ
+        </button>
+        <button
+          class="result-button play-again-button"
+          onclick="window.location.href='/pvp';"
+        >
+          Chơi lại
+        </button>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Thêm thẻ audio -->
+    <audio
+      id="winSound"
+      src="{{ url_for('static', filename='sounds/win.mp3') }}"
+      preload="auto"
+    ></audio>
+    <audio
+      id="loseSound"
+      src="{{ url_for('static', filename='sounds/lose.mp3') }}"
+      preload="auto"
+    ></audio>
+
+    <script>
+      // Biến lưu trữ thời gian còn lại
+      let remainingTime = {{ game.time_limit }};
+      const countdownElement = document.getElementById("countdown");
+      let countdownInterval;
+
+      // Hàm cập nhật đồng hồ đếm ngược
+      function updateCountdown() {
+        if (remainingTime > 0) {
+          remainingTime--;
+          countdownElement.innerText = remainingTime;
+        } else {
+          clearInterval(countdownInterval);
+          // Tự động làm mới trang để hiển thị kết quả hết thời gian
+          window.location.reload();
+        }
+      }
+
+      // Bắt đầu đếm ngược nếu đang là lượt của người chơi và game chưa kết thúc
+      {% if game.current_turn == current_player and not game.game_over %}
+      countdownInterval = setInterval(updateCountdown, 1000);
+      {% endif %}
+
+      // Hàm kiểm tra trạng thái game
+      function checkGameStatus() {
+        fetch('/pvp/game-status/{{ game_id }}')
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              // Cập nhật thông tin game
+              const game = data.game;
+
+              // Cập nhật từ hiện tại
+              document.getElementById('currentWord').innerText = game.current_word;
+
+              // Cập nhật điểm số
+              document.getElementById('scoreValue').innerText = game[data.current_player].score;
+
+              // Cập nhật điểm đối thủ
+              document.querySelector('.opponent-score').innerText = game[data.opponent].score;
+
+              // Cập nhật chỉ báo lượt chơi
+              const turnIndicator = document.querySelector('.turn-indicator');
+              if (game.current_turn === data.current_player) {
+                turnIndicator.innerText = 'Lượt của bạn';
+                turnIndicator.style.background = 'rgba(0, 255, 0, 0.7)';
+
+                // Bật input nếu là lượt của người chơi
+                document.getElementById('userWordInput').disabled = false;
+
+                // Cập nhật thời gian còn lại
+                remainingTime = data.remaining_time;
+                countdownElement.innerText = remainingTime;
+
+                // Bắt đầu đếm ngược nếu chưa có interval
+                if (!countdownInterval) {
+                  countdownInterval = setInterval(updateCountdown, 1000);
+                }
+              } else {
+                turnIndicator.innerText = 'Lượt của đối thủ';
+                turnIndicator.style.background = 'rgba(255, 0, 0, 0.7)';
+
+                // Tắt input nếu không phải lượt của người chơi
+                document.getElementById('userWordInput').disabled = true;
+
+                // Dừng đếm ngược nếu không phải lượt của người chơi
+                if (countdownInterval) {
+                  clearInterval(countdownInterval);
+                  countdownInterval = null;
+                }
+              }
+
+              // Kiểm tra nếu game kết thúc
+              if (game.game_over && !document.querySelector('.game-result')) {
+                // Làm mới trang để hiển thị kết quả
+                window.location.reload();
+              }
+            }
+          })
+          .catch(error => console.error('Lỗi khi kiểm tra trạng thái game:', error));
+      }
+
+      // Kiểm tra trạng thái game mỗi 1 giây nếu game chưa kết thúc
+      {% if not game.game_over %}
+      setInterval(checkGameStatus, 1000);
+      {% endif %}
+
+      // Phát âm thanh khi game kết thúc
+      {% if game.game_over %}
+      window.addEventListener('DOMContentLoaded', function() {
+        {% if game.winner == current_player %}
+        document.getElementById('winSound').play();
+        {% else %}
+        document.getElementById('loseSound').play();
+        {% endif %}
+      });
+      {% endif %}
+
+      // Hàm hiển thị form đổi tên
+      function showChangeNameForm() {
+        document.getElementById("changeNameModal").style.display = "block";
+        document.getElementById("new_player_name").value = "{{ player_name }}";
+        document.getElementById("new_player_name").focus();
+        document.getElementById("new_player_name").select();
+      }
+
+      // Hàm ẩn form đổi tên
+      function hideChangeNameForm() {
+        document.getElementById("changeNameModal").style.display = "none";
+      }
+
+      // Đóng modal khi click bên ngoài
+      window.onclick = function(event) {
+        const modal = document.getElementById("changeNameModal");
+        if (event.target == modal) {
+          hideChangeNameForm();
+        }
+      }
+
+      // Tải bảng xếp hạng
+      function toggleLeaderboard() {
+        const leaderboard = document.getElementById("leaderboard");
+        if (leaderboard.classList.contains("show")) {
+          leaderboard.classList.remove("show");
+        } else {
+          leaderboard.classList.add("show");
+          loadLeaderboard();
+        }
+      }
+
+      // Tải bảng xếp hạng PvP
+      function loadLeaderboard() {
+        fetch("/get-leaderboard?type=ranked")
+          .then((response) => response.json())
+          .then((data) => {
+            const leaderboardBody = document.getElementById("leaderboard-body");
+            leaderboardBody.innerHTML = "";
+
+            if (data.length === 0) {
+              const row = document.createElement("tr");
+              row.innerHTML = '<td colspan="3">Chưa có dữ liệu</td>';
+              leaderboardBody.appendChild(row);
+            } else {
+              data.forEach((player, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                  <td>${index + 1}</td>
+                  <td>${player.name}</td>
+                  <td>${player.score}</td>
+                `;
+                leaderboardBody.appendChild(row);
+              });
+            }
+          })
+          .catch((error) => console.error("Lỗi khi tải bảng xếp hạng:", error));
+      }
+    </script>
+  </body>
+</html>

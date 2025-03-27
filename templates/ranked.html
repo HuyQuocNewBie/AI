@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vua Nối Từ - Xếp Hạng</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='Image/icon.png') }}"
+    />
+  </head>
+  <body>
+    <div class="game-container">
+      <!-- Hiển thị tên người chơi với nút đổi tên -->
+      <div class="player-name-container">
+        <div class="player-name">{{ player_name }}</div>
+        <button
+          class="change-name-icon"
+          onclick="showChangeNameForm()"
+          title="Đổi tên"
+        >
+          ✏️
+        </button>
+      </div>
+
+      <!-- Hiển thị chế độ chơi -->
+      <div class="game-mode-badge ranked-mode">Xếp Hạng</div>
+
+      <!-- Biểu tượng bảng xếp hạng -->
+      <div class="leaderboard-icon" onclick="toggleLeaderboard()">
+        <img
+          src="{{ url_for('static', filename='Image/trophy.png') }}"
+          alt="Bảng xếp hạng"
+        />
+      </div>
+
+      <div class="timer">
+        Thời gian: <span id="countdown">{{ time_limit }}</span> giây
+      </div>
+
+      <div class="word-display" id="currentWord">
+        {% if da_su_dung %} {{ da_su_dung[-1] }} {% else %} bắt đầu {% endif %}
+      </div>
+
+      <form method="POST" id="wordForm">
+        <input
+          type="text"
+          class="input-box"
+          name="user_word"
+          id="userWordInput"
+          autofocus
+        />
+      </form>
+    </div>
+
+    <!-- Add rank display to ranked.html -->
+    <div class="rank-container">
+      <div class="current-rank">{{ rank.current }}</div>
+      <div class="progress-bar-container">
+        <div
+          class="progress-bar"
+          style="width: {{ rank.progress }}%; background-color: {{ rank.color }};"
+        ></div>
+      </div>
+      <div class="next-rank">{{ rank.next }}</div>
+    </div>
+
+    <!-- Form đổi tên (ẩn mặc định) -->
+    <div id="changeNameModal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal" onclick="hideChangeNameForm()">&times;</span>
+        <h2>Đổi tên người chơi</h2>
+        <form
+          action="{{ url_for('change_name') }}"
+          method="POST"
+          class="name-form"
+        >
+          <div class="input-group">
+            <label for="new_player_name">Tên mới:</label>
+            <input
+              type="text"
+              id="new_player_name"
+              name="player_name"
+              required
+              placeholder="Nhập tên mới"
+              value=""
+            />
+            <input type="hidden" name="from_game" value="true" />
+          </div>
+          <button type="submit" class="start-button">Lưu tên mới</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bảng xếp hạng -->
+    <div id="leaderboard" class="leaderboard-panel">
+      <div class="leaderboard-header">
+        <h2>Bảng xếp hạng</h2>
+        <span class="close-btn" onclick="toggleLeaderboard()">×</span>
+      </div>
+      <div class="leaderboard-content">
+        <table id="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Hạng</th>
+              <th>Tên</th>
+              <th>Điểm</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body">
+            <!-- Dữ liệu bảng xếp hạng sẽ được thêm vào đây bằng JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Div thông báo thua -->
+    {% if ket_qua %}
+    <div id="toast" class="toast show">
+      <div class="toast-content">
+        <h2>{{ ket_qua }}</h2>
+        <div class="toast-buttons">
+          <button class="btn home-btn" onclick="window.location.href='/';">
+            Trang chủ
+          </button>
+          {% if ai_thua %}
+          <button class="btn continue-btn" onclick="saveScoreAndContinue()">
+            Chơi tiếp
+          </button>
+          {% else %}
+          <button class="btn retry-btn" onclick="saveScoreAndReset()">
+            Chơi lại
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Gán biến Flask vào thẻ span ẩn -->
+    <span id="stopTimer" data-stop="{{ stop_timer | lower }}"></span>
+    <span id="gameStateId" data-id="{{ game_state_id }}"></span>
+    <span id="score" data-value="{{ score }}" style="display: none"></span>
+
+    <!-- Thêm thẻ audio -->
+    <audio
+      id="winSound"
+      src="{{ url_for('static', filename='sounds/win.mp3') }}"
+      preload="auto"
+    ></audio>
+    <audio
+      id="loseSound"
+      src="{{ url_for('static', filename='sounds/lose.mp3') }}"
+      preload="auto"
+    ></audio>
+
+    <script>
+            var gameData = {
+                aiThua: {{ ai_thua | tojson }},
+                ketQua: {{ ket_qua | tojson }}
+            };
+
+          // Thiết lập thời gian đếm ngược cho chế độ xếp hạng
+          let countdown = {{ time_limit }};
+          const countdownElement = document.getElementById("countdown");
+          let countdownInterval;
+          let isTimerRunning = true;
+
+          // Lấy game state ID
+          const gameStateId = document.getElementById("gameStateId").dataset.id;
+
+          // Lưu trạng thái game hiện tại vào localStorage
+          function saveGameState() {
+            const currentWord = document.getElementById("currentWord").innerText.trim();
+            const score = document.getElementById("score").dataset.value;
+
+            localStorage.setItem('gameState_' + gameStateId, JSON.stringify({
+              word: currentWord,
+              score: score,
+              timeLimit: countdown,
+              timestamp: Date.now()
+            }));
+          }
+
+          // Kiểm tra trạng thái game từ server
+          function checkGameState() {
+            fetch('/check-game-state')
+              .then(response => response.json())
+              .then(data => {
+                const currentWord = document.getElementById("currentWord").innerText.trim();
+
+                // Nếu từ hiện tại khác với từ trên server, cập nhật UI
+                if (data.current_word && data.current_word !== currentWord) {
+                  document.getElementById("currentWord").innerText = data.current_word;
+                  document.getElementById("score").dataset.value = data.score;
+
+                  // Cập nhật thời gian đếm ngược
+                  if (data.time_limit !== countdown) {
+                    countdown = data.time_limit;
+                    countdownElement.innerText = countdown;
+
+                    // Khởi động lại bộ đếm thời gian
+                    if (countdownInterval) {
+                      clearInterval(countdownInterval);
+                    }
+
+                    if (!data.stop_timer) {
+                      countdownInterval = setInterval(updateCountdown, 1000);
+                      isTimerRunning = true;
+                    } else {
+                      isTimerRunning = false;
+                    }
+                  }
+
+                  // Lưu trạng thái mới vào localStorage
+                  saveGameState();
+                }
+
+                // Kiểm tra nếu timer nên dừng
+                if (data.stop_timer && isTimerRunning) {
+                  clearInterval(countdownInterval);
+                  isTimerRunning = false;
+                }
+              })
+              .catch(error => console.error("Lỗi khi kiểm tra trạng thái game:", error));
+          }
+
+          // Lắng nghe sự kiện storage để đồng bộ giữa các tab
+          window.addEventListener('storage', function(e) {
+            // Kiểm tra xem sự kiện có phải cho game state hiện tại không
+            if (e.key === 'gameState_' + gameStateId) {
+              try {
+                const data = JSON.parse(e.newValue);
+
+                // Cập nhật UI với trạng thái mới
+                document.getElementById("currentWord").innerText = data.word;
+                document.getElementById("score").dataset.value = data.score;
+
+                // Cập nhật thời gian đếm ngược
+                if (data.timeLimit !== countdown) {
+                  countdown = data.timeLimit;
+                  countdownElement.innerText = countdown;
+
+                  // Khởi động lại bộ đếm thời gian
+                  if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                  }
+
+                  countdownInterval = setInterval(updateCountdown, 1000);
+                  isTimerRunning = true;
+                }
+              } catch (error) {
+                console.error("Error parsing storage event data:", error);
+              }
+            }
+          });
+
+          // Hàm cập nhật đồng hồ đếm ngược
+          function updateCountdown() {
+            if (countdown > 0) {
+              countdown--;
+              countdownElement.innerText = countdown;
+            } else {
+              clearInterval(countdownInterval);
+              isTimerRunning = false;
+
+              // Hiển thị thông báo hết thời gian
+              showAlert(
+                "Hết thời gian! Bạn đã thua!",
+                () => {
+                  saveScoreAndReset();
+                },
+                () => {
+                  window.location.href = "/reset-session";
+                }
+              );
+            }
+          }
+
+          // Khởi động bộ đếm thời gian
+          if (document.getElementById("stopTimer").dataset.stop !== "true") {
+            countdownInterval = setInterval(updateCountdown, 1000);
+          } else {
+            isTimerRunning = false;
+          }
+
+          // Lưu trạng thái ban đầu
+          saveGameState();
+
+          // Kiểm tra trạng thái game mỗi 1 giây
+          setInterval(checkGameState, 1000);
+
+          // Hiển thị thông báo hết thời gian
+          function showAlert(message, onRetry, onHome) {
+            const alertBox = document.createElement("div");
+            alertBox.classList.add("custom-alert");
+
+            alertBox.innerHTML = `
+                <div class="alert-content">
+                    <h2>${message}</h2>
+                    <div class="alert-buttons">
+                        <button class="btn home-btn">Trang chủ</button>
+                        <button class="btn retry-btn">Chơi lại</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(alertBox);
+
+            alertBox.querySelector(".retry-btn").addEventListener("click", () => {
+              alertBox.remove();
+              if (onRetry) onRetry();
+            });
+
+            alertBox.querySelector(".home-btn").addEventListener("click", () => {
+              alertBox.remove();
+              if (onHome) onHome();
+            });
+          }
+
+            // Hàm hiển thị form đổi tên
+            function showChangeNameForm() {
+              document.getElementById("changeNameModal").style.display = "block";
+              document.getElementById("new_player_name").value = "{{ player_name }}";
+              document.getElementById("new_player_name").focus();
+              document.getElementById("new_player_name").select();
+            }
+
+            // Hàm ẩn form đổi tên
+            function hideChangeNameForm() {
+              document.getElementById("changeNameModal").style.display = "none";
+            }
+
+            // Đóng modal khi click bên ngoài
+            window.onclick = function(event) {
+              const modal = document.getElementById("changeNameModal");
+              if (event.target == modal) {
+                hideChangeNameForm();
+              }
+            }
+
+            // Hàm lưu điểm và chơi lại cho chế độ xếp hạng
+            function saveScoreAndReset() {
+              fetch("/save-score", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              })
+                .then((response) => response.json())
+                .then((data) => {
+                  window.location.href = "/ranked?reset=true";
+                })
+                .catch((error) => {
+                  console.error("Lỗi khi lưu điểm:", error);
+                  window.location.href = "/ranked?reset=true";
+                });
+            }
+
+            // Hàm lưu điểm và tiếp tục cho chế độ xếp hạng
+            function saveScoreAndContinue() {
+              fetch("/save-score", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              })
+                .then((response) => response.json())
+                .then((data) => {
+                  window.location.href = "/ranked?continue=true";
+                })
+                .catch((error) => {
+                  console.error("Lỗi khi lưu điểm:", error);
+                  window.location.href = "/ranked?continue=true";
+                });
+            }
+
+            // Tải bảng xếp hạng xếp hạng
+            function loadLeaderboard() {
+              fetch("/get-leaderboard?type=ranked")
+                .then((response) => response.json())
+                .then((data) => {
+                  const leaderboardBody = document.getElementById("leaderboard-body");
+                  leaderboardBody.innerHTML = "";
+
+                  if (data.length === 0) {
+                    const row = document.createElement("tr");
+                    row.innerHTML = '<td colspan="3">Chưa có dữ liệu</td>';
+                    leaderboardBody.appendChild(row);
+                  } else {
+                    data.forEach((player, index) => {
+                      const row = document.createElement("tr");
+                      row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${player.name}</td>
+                        <td>${player.score}</td>
+                      `;
+                      leaderboardBody.appendChild(row);
+                    });
+                  }
+                })
+                .catch((error) => console.error("Lỗi khi tải bảng xếp hạng:", error));
+            }
+
+            // Khi form được submit, lưu trạng thái game
+            document.getElementById("wordForm").addEventListener("submit", function() {
+              // Lưu trạng thái trước khi submit
+              saveGameState();
+            });
+
+            window.addEventListener("storage", function (event) {
+        if (event.key === "gameStateUpdate") {
+          location.reload(); // Cập nhật lại trang khi có thay đổi từ tab khác
+        }
+      });
+
+      // Khi có thay đổi, lưu vào localStorage để các tab khác nhận biết
+      function notifyOtherTabs() {
+        localStorage.setItem("gameStateUpdate", Date.now());
+      }
+
+      // Cập nhật lại từ khi game thay đổi
+      function updateGameState() {
+        fetch('/check-game-state')
+          .then(response => response.json())
+          .then(data => {
+            const currentWord = document.getElementById("currentWord").innerText.trim();
+
+            if (data.current_word && data.current_word !== currentWord) {
+              document.getElementById("currentWord").innerText = data.current_word;
+              document.getElementById("score").dataset.value = data.score;
+
+              // Cập nhật thời gian đếm ngược
+              if (data.time_limit !== countdown) {
+                countdown = data.time_limit;
+                countdownElement.innerText = countdown;
+
+                if (countdownInterval) {
+                  clearInterval(countdownInterval);
+                }
+
+                if (!data.stop_timer) {
+                  countdownInterval = setInterval(updateCountdown, 1000);
+                  isTimerRunning = true;
+                } else {
+                  isTimerRunning = false;
+                }
+              }
+
+              // Lưu trạng thái mới
+              saveGameState();
+              notifyOtherTabs(); // Thông báo cho các tab khác
+            }
+          });
+      }
+
+      // Kiểm tra trạng thái game mỗi 2 giây
+      setInterval(updateGameState, 2000);
+    </script>
+  </body>
+</html>

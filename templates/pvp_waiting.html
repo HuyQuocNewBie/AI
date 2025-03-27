@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vua Nối Từ - Đang tìm đối thủ</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='Image/icon.png') }}"
+    />
+    <style>
+      .waiting-container {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        max-width: 500px;
+        width: 90%;
+        margin: 0 auto;
+      }
+
+      .waiting-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .waiting-message {
+        font-size: 18px;
+        margin-bottom: 30px;
+        color: #555;
+      }
+
+      .waiting-time {
+        font-size: 36px;
+        font-weight: bold;
+        margin-bottom: 30px;
+        color: #ff6b6b;
+      }
+
+      .waiting-animation {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+      }
+
+      .dot {
+        width: 15px;
+        height: 15px;
+        background-color: #ff6b6b;
+        border-radius: 50%;
+        margin: 0 5px;
+        animation: pulse 1.5s infinite ease-in-out;
+      }
+
+      .dot:nth-child(2) {
+        animation-delay: 0.3s;
+      }
+
+      .dot:nth-child(3) {
+        animation-delay: 0.6s;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          transform: scale(0.8);
+          opacity: 0.5;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 1;
+        }
+      }
+
+      .cancel-button {
+        background: linear-gradient(45deg, #ff416c, #ff4b2b);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .cancel-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .rank-info {
+        margin-top: 30px;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 10px;
+      }
+
+      .rank-title {
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #333;
+      }
+
+      .rank-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 10px;
+        width: 100%;
+      }
+
+      .current-rank,
+      .next-rank {
+        font-size: 14px;
+        font-weight: bold;
+        padding: 5px 10px;
+        border-radius: 5px;
+        color: white;
+        background: {{ rank.color }};
+      }
+
+      .progress-bar-container {
+        flex-grow: 1;
+        height: 10px;
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        margin: 0 10px;
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        height: 100%;
+        border-radius: 5px;
+        background-color: {{ rank.color }};
+        width: {{ rank.progress }}%;
+        transition: width 0.5s ease-in-out;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="waiting-container">
+      <h1 class="waiting-title">Đang tìm đối thủ</h1>
+
+      <p class="waiting-message">
+        Xin chào, <strong>{{ player_name }}</strong>! Chúng tôi đang tìm đối thủ
+        phù hợp cho bạn.
+      </p>
+
+      <div class="waiting-time">
+        <span id="waiting-seconds">{{ waiting_time }}</span> giây
+      </div>
+
+      <div class="waiting-animation">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+
+      <form action="{{ url_for('cancel_waiting') }}" method="POST">
+        <button type="submit" class="cancel-button">Hủy tìm kiếm</button>
+      </form>
+
+      <div class="rank-info">
+        <h3 class="rank-title">Xếp hạng hiện tại của bạn</h3>
+        <p>{{ rank.current }} ({{ rank.total_points }} điểm)</p>
+
+        <div class="rank-container">
+          <div class="current-rank">{{ rank.current }}</div>
+          <div class="progress-bar-container">
+            <div class="progress-bar"></div>
+          </div>
+          <div class="next-rank">{{ rank.next }}</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Cập nhật thời gian chờ
+      let waitingTime = {{ waiting_time }};
+      const waitingSecondsElement = document.getElementById('waiting-seconds');
+
+      function updateWaitingTime() {
+        waitingTime++;
+        waitingSecondsElement.textContent = waitingTime;
+      }
+
+      // Cập nhật thời gian mỗi giây
+      setInterval(updateWaitingTime, 1000);
+
+      // Kiểm tra trạng thái tìm kiếm mỗi 2 giây
+      function checkMatchStatus() {
+        fetch('/pvp/check-status')
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'matched') {
+              // Đã tìm thấy đối thủ, chuyển hướng đến trang game
+              window.location.href = '/pvp/game/' + data.game_id;
+            }
+          })
+          .catch(error => console.error('Lỗi khi kiểm tra trạng thái:', error));
+      }
+
+      // Kiểm tra trạng thái mỗi 2 giây
+      setInterval(checkMatchStatus, 2000);
+    </script>
+  </body>
+</html>

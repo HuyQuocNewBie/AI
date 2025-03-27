@@ -1,495 +1,900 @@
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Quicksand', sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Quicksand", sans-serif;
 }
+
 body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(140deg, #FF5733, #C850C0, #4158D0);
-    background-size: 200% 200%;
-    animation: gradientAnimation 5s ease infinite;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(140deg, #ff5733, #c850c0, #4158d0);
+  background-size: 200% 200%;
+  animation: gradientAnimation 5s ease infinite;
 }
 
 /* Hiệu ứng gradient di chuyển */
 @keyframes gradientAnimation {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* Header */
 .header {
-    text-align: center;
-    padding: 20px;
+  text-align: center;
+  padding: 20px;
 }
 
 .header h1 {
-    font-family: 'Patrick Hand', cursive;
-    font-size: 32px;
-    color: white;
-    margin-bottom: 10px;
+  font-family: "Patrick Hand", cursive;
+  font-size: 32px;
+  color: white;
+  margin-bottom: 10px;
 }
 
 .header img {
-    width: 300px;   
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-    margin-bottom: 20px;
+  width: 300px;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  margin-bottom: 20px;
 }
+
 .container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
+
 .game-box {
-    padding: 30px;
-    text-align: center;
-    width: 350px;
-    margin-top: -300px;
+  padding: 30px;
+  text-align: center;
+  width: 350px;
+  margin-top: -300px;
 }
 
 /* Tiêu đề */
 h1 {
-    font-size: 28px;
-    color: #333;
-    margin-bottom: 15px;
+  font-size: 28px;
+  color: #333;
+  margin-bottom: 15px;
 }
 
 /* Đoạn giới thiệu */
 p {
-    font-size: 16px;
-    color: #555;
-    margin-bottom: 20px;
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 20px;
 }
 
 /* Nút bấm */
 .start-button {
-    display: inline-block;
-    padding: 12px 25px;
-    font-size: 18px;
-    color: white;
-    background: #ff6b6b;
-    text-decoration: none;
-    border-radius: 8px;
-    transition: 0.3s ease;
+  display: inline-block;
+  padding: 12px 25px;
+  font-size: 18px;
+  color: white;
+  background: #ff6b6b;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: 0.3s ease;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+/* Nút đổi tên */
+.change-name-button {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 16px;
+  color: white;
+  background: #4a90e2;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: 0.3s ease;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
 }
 
 /* Hiệu ứng hover */
-.start-button:hover {
-    background: #ff4f4f;
-    transform: translateY(-3px);
+.start-button:hover,
+.change-name-button:hover {
+  opacity: 0.9;
+  transform: translateY(-3px);
 }
+
+/* Game modes */
+.game-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.game-button {
+  display: inline-block;
+  padding: 15px 25px;
+  font-size: 18px;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.solo-ai-button {
+  background: linear-gradient(45deg, #ff416c, #ff4b2b);
+}
+
+.ranked-button {
+  background: linear-gradient(45deg, #4158d0, #c850c0);
+}
+
+.game-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
 .game-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start; /* Đẩy nội dung lên trên */
-    height: 100vh;
-    padding-top: 50px; /* Thêm khoảng cách từ trên xuống */
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100vh;
+  padding-top: 50px;
+}
+
 .word-display {
-    font-size: 60px;
-    font-weight: bold;
-    margin: 20px 0;
-    color: white;
-    text-align: center;
-  }
-  .input-box {
-    width: 100%;
-    padding: 12px;
-    font-size: 25px;
-    border: none;
-    border-radius: 25px;
-    text-align: center;
-    outline: none;
-    margin-top: 85px;
-  }
-  .timer {
-    font-size: 24px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: white;
+  font-size: 60px;
+  font-weight: bold;
+  margin: 20px 0;
+  color: white;
+  text-align: center;
+}
+
+.input-box {
+  width: 100%;
+  padding: 12px;
+  font-size: 25px;
+  border: none;
+  border-radius: 25px;
+  text-align: center;
+  outline: none;
+  margin-top: 85px;
+}
+
+.timer {
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: white;
 }
 
 .timer::before {
-    content: "⏳";
-    display: inline-block;
-    animation: rotateClock 1.5s linear infinite;
+  content: "⏳";
+  display: inline-block;
+  animation: rotateClock 1.5s linear infinite;
 }
-  @keyframes rotateClock {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
+
+@keyframes rotateClock {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .toast {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white; /* Đổi màu nền thành trắng */
-    color: black; /* Đổi màu chữ thành đen */
-    padding: 30px; /* Tăng padding để div lớn hơn */
-    border-radius: 15px; /* Bo góc nhẹ nhàng */
-    text-align: center;
-    z-index: 1000;
-    display: none;
-    width: 80%; /* Tăng chiều rộng */
-    max-width: 600px; /* Giới hạn chiều rộng tối đa */
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Tạo hiệu ứng bóng */
-    height: 25%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  color: black;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  z-index: 1000;
+  display: none;
+  width: 80%;
+  max-width: 600px;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+  height: 25%;
 }
 
 .toast.show {
-    display: block;
+  display: block;
 }
 
 .toast-content h2 {
-    margin-bottom: 20px;
-    font-size: 28px; /* Tăng kích thước chữ */
-    font-weight: bold;
+  margin-bottom: 20px;
+  font-size: 28px;
+  font-weight: bold;
 }
 
 .toast-buttons {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
 }
 
 .btn {
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 18px; /* Tăng kích thước chữ */
-    cursor: pointer;
-    border: none;
-    color: white;
-    transition: all 0.3s ease;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
 }
 
 .home-btn {
-    background: linear-gradient(45deg, #ff416c, #ff4b2b);
+  background: linear-gradient(45deg, #ff416c, #ff4b2b);
 }
 
 .retry-btn {
-    background: linear-gradient(45deg, #1e90ff, #00bfff);
+  background: linear-gradient(45deg, #1e90ff, #00bfff);
 }
 
-.home-btn:hover, .retry-btn:hover {
-    opacity: 0.8;
-    transform: scale(1.05); /* Tạo hiệu ứng phóng to nhẹ khi hover */
+.home-btn:hover,
+.retry-btn:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
 }
 
-/* 🔥 Custom Alert Box */
+/* Custom Alert Box */
 .custom-alert {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border-radius: 15px;
-    text-align: center;
-    z-index: 1000;
-    width: 30%;
-    height: 30%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center;
+  z-index: 1000;
+  width: 30%;
+  height: 30%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .custom-alert h2 {
-    margin-bottom: 15px;
-    font-size: 24px;
-    font-weight: bold;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  margin-bottom: 15px;
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* 🎉 Icon trên tiêu đề */
 .custom-alert h2::before {
-    content: "⚠️"; /* Biểu tượng cảnh báo */
-    font-size: 36px;
-    display: block;
-    margin-bottom: 10px;
+  content: "⚠️";
+  font-size: 36px;
+  display: block;
+  margin-bottom: 10px;
 }
 
 .alert-buttons {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    padding-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding-bottom: 10px;
 }
 
 .btn {
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 18px;
-    cursor: pointer;
-    border: none;
-    color: white;
-    transition: all 0.3s ease;
-    flex: 1;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+  flex: 1;
 }
 
 .retry-btn {
-    background: linear-gradient(45deg, #1e90ff, #00bfff);
+  background: linear-gradient(45deg, #1e90ff, #00bfff);
 }
 
 .home-btn {
-    background: linear-gradient(45deg, #ff416c, #ff4b2b);
+  background: linear-gradient(45deg, #ff416c, #ff4b2b);
 }
 
-.retry-btn:hover, .home-btn:hover {
-    opacity: 0.8;
-    transform: scale(1.05);
+.retry-btn:hover,
+.home-btn:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
 }
 
-/* 🔥 Hiển thị điểm số góc trên phải */
+/* Hiển thị điểm số góc trên phải */
 .score {
-    position: absolute;
-    top: 20px;
-    right: 30px;
-    font-size: 24px;
-    font-weight: bold;
-    color: white;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 10px 20px;
-    border-radius: 10px;
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+
+/* Hiển thị tên người chơi */
+.player-name-container {
+  position: absolute;
+  top: 20px;
+  left: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-name {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+
+.change-name-icon {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: white;
+  padding: 5px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+.change-name-icon:hover {
+  transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Form nhập tên */
+.name-form {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  width: 100%;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+  border-color: #ff6b6b;
+  outline: none;
+}
+
+/* Player welcome screen */
+.player-welcome {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  text-align: center;
+}
+
+.player-welcome h2 {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.player-welcome p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+/* Modal đổi tên */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1050;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 80%;
+  max-width: 500px;
+  position: relative;
+}
+
+.close-modal {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+  color: black;
+  text-decoration: none;
+}
+
+/* Bảng xếp hạng */
+.leaderboard-icon {
+  position: absolute;
+  top: 20px;
+  right: 180px;
+  cursor: pointer;
+  z-index: 100;
+  width: 40px;
+  height: 40px;
+}
+
+.leaderboard-icon img {
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
+  transition: transform 0.3s;
+  object-fit: contain;
+}
+
+.leaderboard-icon img:hover {
+  transform: scale(1.1);
+}
+
+.leaderboard-panel {
+  position: absolute;
+  top: 70px;
+  right: 30px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  width: 300px;
+  max-width: 90%;
+  z-index: 1000;
+  display: none;
+  overflow: hidden;
+  max-height: 80vh;
+}
+
+.leaderboard-panel.show {
+  display: block;
+  width: 250px;
+  max-height: 70vh;
+}
+
+.leaderboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: linear-gradient(45deg, #ff416c, #ff4b2b);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.leaderboard-content {
+  padding: 15px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+#leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#leaderboard-table th,
+#leaderboard-table td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+
+#leaderboard-table th {
+  background: #f5f5f5;
+  font-weight: bold;
+  color: #333;
+}
+
+#leaderboard-table tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+#leaderboard-table tr:hover {
+  background: #f0f0f0;
+}
+
+.continue-btn {
+  background: linear-gradient(45deg, #00b894, #00cec9);
+}
+
+.continue-btn:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+/* Game mode badge */
+.game-mode-badge {
+  position: absolute;
+  top: 20px;
+  right: 250px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.solo-mode {
+  background: linear-gradient(45deg, #ff416c, #ff4b2b);
+}
+
+.pvp-mode {
+  background: linear-gradient(45deg, #4158d0, #c850c0);
+}
+
+/* Rank container and progress bar */
+.rank-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.current-rank,
+.next-rank {
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.progress-bar-container {
+  flex-grow: 1;
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  margin: 0 10px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.5s ease-in-out;
 }
 
 /* Responsive cho các thiết bị */
 /* Desktop (PC) */
 @media screen and (min-width: 1024px) {
-    .header h1 {
-        font-size: 40px;
-    }
-    
-    .header img {
-        width: 400px;
-    }
-    
-    .game-box {
-        width: 450px;
-        margin-top: -200px;
-    }
-    
-    .word-display {
-        font-size: 72px;
-    }
-    
-    .input-box {
-        width: 80%;
-        font-size: 30px;
-    }
+  .header h1 {
+    font-size: 40px;
+  }
+
+  .header img {
+    width: 400px;
+  }
+
+  .game-box {
+    width: 450px;
+    margin-top: -200px;
+  }
+
+  .word-display {
+    font-size: 72px;
+  }
+
+  .input-box {
+    width: 80%;
+    font-size: 30px;
+  }
 }
 
 /* Laptop */
 @media screen and (min-width: 768px) and (max-width: 1023px) {
-    .header h1 {
-        font-size: 36px;
-    }
-    
-    .header img {
-        width: 350px;
-    }
-    
-    .game-box {
-        width: 400px;
-        margin-top: -250px;
-    }
-    
-    .word-display {
-        font-size: 65px;
-    }
-    
-    .input-box {
-        width: 90%;
-        font-size: 28px;
-    }
+  .header h1 {
+    font-size: 36px;
+  }
+
+  .header img {
+    width: 350px;
+  }
+
+  .game-box {
+    width: 400px;
+    margin-top: -250px;
+  }
+
+  .word-display {
+    font-size: 65px;
+  }
+
+  .input-box {
+    width: 90%;
+    font-size: 28px;
+  }
 }
 
 /* Tablet */
 @media screen and (min-width: 481px) and (max-width: 767px) {
-    .header h1 {
-        font-size: 32px;
-    }
-    
-    .header img {
-        width: 300px;
-    }
-    
-    .game-box {
-        width: 350px;
-        margin-top: -300px;
-    }
-    
-    .word-display {
-        font-size: 55px;
-    }
-    
-    .input-box {
-        width: 95%;
-        font-size: 25px;
-    }
-    
-    .toast {
-        width: 90%;
-        height: 30%;
-    }
-    
-    .custom-alert {
-        width: 80%;
-        height: 35%;
-    }
+  .header h1 {
+    font-size: 32px;
+  }
+
+  .header img {
+    width: 300px;
+  }
+
+  .game-box {
+    width: 350px;
+    margin-top: -300px;
+  }
+
+  .word-display {
+    font-size: 55px;
+  }
+
+  .input-box {
+    width: 95%;
+    font-size: 25px;
+  }
+
+  .toast {
+    width: 90%;
+    height: 30%;
+  }
+
+  .custom-alert {
+    width: 80%;
+    height: 35%;
+  }
 }
 
 /* Mobile */
 @media screen and (max-width: 480px) {
-    body {
-        min-height: 100vh;
-        overflow-x: hidden;
-    }
+  .leaderboard-icon {
+    top: 20px;
+    right: 120px;
+    width: 30px;
+    height: 30px;
+  }
 
-    .header {
-        padding: 10px;
-    }
+  .leaderboard-icon img {
+    width: 30px;
+    height: 30px;
+  }
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-    .header h1 {
-        font-size: clamp(20px, 5vw, 28px);
-        margin-bottom: 5px;
-    }
-    
-    .header img {
-        width: clamp(200px, 60vw, 250px);
-        margin-bottom: 15px;
-    }
-    
-    .game-box {
-        width: 90%;
-        max-width: 300px;
-        margin-top: -200px;
-        padding: 15px;
-    }
-    
-    .word-display {
-        font-size: clamp(35px, 10vw, 45px);
-        margin: 15px 0;
-    }
-    
-    .input-box {
-        width: 90%;
-        font-size: clamp(18px, 5vw, 22px);
-        margin-top: 40px;
-        padding: 10px;
-    }
-    
-    .timer {
-        font-size: clamp(16px, 4vw, 20px);
-        margin-top: 10px;
-    }
-    
+  .header {
+    padding: 10px;
+  }
+
+  .header h1 {
+    font-size: clamp(20px, 5vw, 28px);
+    margin-bottom: 5px;
+  }
+
+  .header img {
+    width: clamp(200px, 60vw, 250px);
+    margin-bottom: 15px;
+  }
+
+  .game-box {
+    width: 90%;
+    max-width: 300px;
+    margin-top: -200px;
+    padding: 15px;
+  }
+
+  .word-display {
+    font-size: clamp(35px, 10vw, 45px);
+    margin: 15px 0;
+  }
+
+  .input-box {
+    width: 90%;
+    font-size: clamp(18px, 5vw, 22px);
+    margin-top: 40px;
+    padding: 10px;
+  }
+
+  .timer {
+    font-size: clamp(16px, 4vw, 20px);
+    margin-top: 10px;
+  }
+
+  .toast {
+    width: 90%;
+    max-width: 320px;
+    height: auto;
+    min-height: 200px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .toast-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .toast-content h2 {
+    font-size: clamp(18px, 5vw, 24px);
+    margin-bottom: 10px;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .toast-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: clamp(16px, 4vw, 18px);
+    border-radius: 8px;
+    margin: 0;
+  }
+
+  /* Small Mobile */
+  @media screen and (max-width: 320px) {
     .toast {
-        width: 90%;
-        max-width: 320px;
-        height: auto;
-        min-height: 200px;
-        padding: 15px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+      width: 95%;
+      min-height: 180px;
+      padding: 12px;
     }
-    
-    .toast-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 15px;
-    }
-    
+
     .toast-content h2 {
-        font-size: clamp(18px, 5vw, 24px);
-        margin-bottom: 10px;
-        text-align: center;
-        line-height: 1.4;
-    }
-    
-    .toast-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        width: 100%;
-        margin-top: 10px;
-    }
-    
-    .btn {
-        width: 100%;
-        padding: 12px 20px;
-        font-size: clamp(16px, 4vw, 18px);
-        border-radius: 8px;
-        margin: 0;
-    }
-
-    /* Small Mobile */
-    @media screen and (max-width: 320px) {
-        .toast {
-            width: 95%;
-            min-height: 180px;
-            padding: 12px;
-        }
-
-        .toast-content h2 {
-            font-size: clamp(16px, 4vw, 20px);
-        }
-
-        .btn {
-            padding: 10px 16px;
-            font-size: clamp(14px, 3.5vw, 16px);
-        }
-    }
-
-    .score {
-        font-size: clamp(16px, 4vw, 20px);
-        padding: 6px 12px;
-        top: 10px;
-        right: 10px;
-    }
-
-    .game-container {
-        padding-top: 20px;
-    }
-
-    .toast-buttons, .alert-buttons {
-        flex-direction: column;
-        gap: 10px;
-        width: 100%;
+      font-size: clamp(16px, 4vw, 20px);
     }
 
     .btn {
-        width: 100%;
+      padding: 10px 16px;
+      font-size: clamp(14px, 3.5vw, 16px);
     }
-}
+  }
 
-.continue-btn {
-    background: linear-gradient(45deg, #00b894, #00cec9);
-}
+  .score {
+    font-size: clamp(16px, 4vw, 20px);
+    padding: 6px 12px;
+    top: 10px;
+    right: 10px;
+  }
 
-.continue-btn:hover {
-    opacity: 0.8;
-    transform: scale(1.05);
+  .player-name {
+    font-size: clamp(16px, 4vw, 20px);
+    padding: 6px 12px;
+    top: 10px;
+    left: 10px;
+  }
+
+  .game-container {
+    padding-top: 20px;
+  }
+
+  .toast-buttons,
+  .alert-buttons {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .leaderboard-icon {
+    top: 20px;
+    right: 120px;
+  }
+
+  .leaderboard-icon img {
+    width: 30px;
+    height: 30px;
+  }
+  /* Mobile adjustments for leaderboard */
+  @media screen and (max-width: 480px) {
+    .leaderboard-panel {
+      width: 250px;
+      right: 10px;
+      top: 60px;
+    }
+
+    .leaderboard-content {
+      max-height: 50vh;
+    }
+  }
+  .leaderboard-panel {
+    width: 95%;
+  }
+
+  .game-mode-badge {
+    font-size: 12px;
+    padding: 3px 10px;
+    right: 180px;
+  }
+
+  .rank-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .progress-bar-container {
+    width: 100%;
+    margin: 5px 0;
+  }
 }

@@ -1,23 +1,191 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vua Nối Từ</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="{{ url_for('static', filename='Image/icon.png') }}">
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='Image/icon.png') }}"
+    />
+  </head>
+  <body>
     <header class="header">
-        <h1>Nối từ không?</h1>
-        <img src="{{ url_for('static', filename='Image/noitu.png') }}" alt="Chơi nối từ đi">
+      <h1>Nối từ không?</h1>
+      <img
+        src="{{ url_for('static', filename='Image/noitu.png') }}"
+        alt="Chơi nối từ đi"
+      />
     </header>
 
     <div class="container">
-        <div class="game-box">
-            <a href="{{ url_for('index') }}" class="start-button">Bắt đầu chơi</a>
+      <div class="game-box">
+        {% if session.get('player_name') %}
+        <!-- Hiển thị tên người chơi và nút bắt đầu nếu đã có tên -->
+        <div class="player-welcome">
+          <h2>Xin chào, {{ session.get('player_name') }}!</h2>
+          <p>Bạn muốn chơi chế độ nào?</p>
+          <div class="game-modes">
+            <a href="{{ url_for('index') }}" class="game-button solo-ai-button">Solo AI</a>
+            <a href="{{ url_for('pvp_mode') }}" class="game-button ranked-button">Ranked Play</a>
+          </div>
+          <button onclick="showChangeNameForm()" class="change-name-button">Đổi tên</button>
         </div>
+        {% else %}
+        <!-- Form nhập tên người chơi nếu chưa có tên -->
+        <form
+          action="{{ url_for('save_name') }}"
+          method="POST"
+          class="name-form"
+        >
+          <div class="input-group">
+            <label for="player_name">Nhập tên của bạn:</label>
+            <input
+              type="text"
+              id="player_name"
+              name="player_name"
+              required
+              placeholder="Tên của bạn"
+              value=""
+            />
+          </div>
+          <button type="submit" class="start-button">Bắt đầu chơi</button>
+        </form>
+        {% endif %}
+      </div>
     </div>
-</body>
+
+    <!-- Form đổi tên (ẩn mặc định) -->
+    <div id="changeNameModal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal" onclick="hideChangeNameForm()">&times;</span>
+        <h2>Đổi tên người chơi</h2>
+        <form action="{{ url_for('change_name') }}" method="POST" class="name-form">
+          <div class="input-group">
+            <label for="new_player_name">Tên mới:</label>
+            <input
+              type="text"
+              id="new_player_name"
+              name="player_name"
+              required
+              placeholder="Nhập tên mới"
+              value=""
+            />
+          </div>
+          <button type="submit" class="start-button">Lưu tên mới</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Biểu tượng bảng xếp hạng -->
+    <div class="leaderboard-icon" onclick="toggleLeaderboard()">
+      <img
+        src="{{ url_for('static', filename='Image/trophy.png') }}"
+        alt="Bảng xếp hạng"
+      />
+    </div>
+
+    <!-- Bảng xếp hạng -->
+    <div id="leaderboard" class="leaderboard-panel">
+      <div class="leaderboard-header">
+        <h2>Bảng xếp hạng</h2>
+        <span class="close-btn" onclick="toggleLeaderboard()">×</span>
+      </div>
+      <div class="leaderboard-content">
+        <table id="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Hạng</th>
+              <th>Tên</th>
+              <th>Điểm</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body">
+            <!-- Dữ liệu bảng xếp hạng sẽ được thêm vào đây bằng JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      // Tự động chuyển đến trang chơi nếu đã có tên
+      {% if auto_start %}
+      document.addEventListener('DOMContentLoaded', function() {
+        window.location.href = "{{ url_for('index') }}";
+      });
+      {% endif %}
+
+      // Hàm hiển thị/ẩn bảng xếp hạng
+      function toggleLeaderboard() {
+        const leaderboard = document.getElementById("leaderboard");
+        if (leaderboard.classList.contains("show")) {
+          leaderboard.classList.remove("show");
+        } else {
+          leaderboard.classList.add("show");
+          loadLeaderboard();
+        }
+      }
+
+      // Hàm hiển thị form đổi tên
+      function showChangeNameForm() {
+        document.getElementById("changeNameModal").style.display = "block";
+        document.getElementById("new_player_name").value = "{{ session.get('player_name', '') }}";
+        document.getElementById("new_player_name").focus();
+        document.getElementById("new_player_name").select();
+      }
+
+      // Hàm ẩn form đổi tên
+      function hideChangeNameForm() {
+        document.getElementById("changeNameModal").style.display = "none";
+      }
+
+      // Đóng modal khi click bên ngoài
+      window.onclick = function(event) {
+        const modal = document.getElementById("changeNameModal");
+        if (event.target == modal) {
+          hideChangeNameForm();
+        }
+      }
+
+      // Hàm tải dữ liệu bảng xếp hạng
+      function loadLeaderboard() {
+        fetch("/get-leaderboard")
+          .then((response) => response.json())
+          .then((data) => {
+            const leaderboardBody = document.getElementById("leaderboard-body");
+            leaderboardBody.innerHTML = "";
+
+            if (data.length === 0) {
+              const row = document.createElement("tr");
+              row.innerHTML = '<td colspan="3">Chưa có dữ liệu</td>';
+              leaderboardBody.appendChild(row);
+            } else {
+              data.forEach((player, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                  <td>${index + 1}</td>
+                  <td>${player.name}</td>
+                  <td>${player.score}</td>
+                `;
+                leaderboardBody.appendChild(row);
+              });
+            }
+          })
+          .catch((error) => console.error("Lỗi khi tải bảng xếp hạng:", error));
+      }
+
+      // Tải bảng xếp hạng khi trang được tải
+      document.addEventListener('DOMContentLoaded', function() {
+        loadLeaderboard();
+      });
+    </script>
+  </body>
 </html>

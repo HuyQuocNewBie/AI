@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vua Nối Từ - Solo AI</title>
+    <title>Vua Nối Từ - PvP</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
@@ -24,14 +24,14 @@
       <div class="score">Score: <span id="scoreValue">{{ score }}</span></div>
 
       <!-- Hiển thị chế độ chơi -->
-      <div class="game-mode-badge solo-mode">Solo AI</div>
+      <div class="game-mode-badge pvp-mode">PvP</div>
 
       <!-- Biểu tượng bảng xếp hạng -->
       <div class="leaderboard-icon" onclick="toggleLeaderboard()">
         <img src="{{ url_for('static', filename='Image/trophy.png') }}" alt="Bảng xếp hạng">
       </div>
 
-      <div class="timer">Thời gian: <span id="countdown">10</span> giây</div>
+      <div class="timer">Thời gian: <span id="countdown">{{ time_limit }}</span> giây</div>
 
       <div class="word-display" id="currentWord">
         {% if da_su_dung %} {{ da_su_dung[-1] }} {% else %} bắt đầu {% endif %}
@@ -40,6 +40,15 @@
       <form method="POST">
         <input type="text" class="input-box" name="user_word" autofocus />
       </form>
+
+      <!-- Hiển thị xếp hạng và thanh tiến trình -->
+      <div class="rank-container">
+        <div class="current-rank">{{ current_rank }}</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: {{ progress * 100 }}%; background-color: {{ rank_color }};"></div>
+        </div>
+        <div class="next-rank">{{ next_rank }}</div>
+      </div>
     </div>
 
     <!-- Form đổi tên (ẩn mặc định) -->
@@ -87,7 +96,7 @@
       </div>
     </div>
 
-    <!-- Div thông báo thua -->
+    <!-- Div thông báo kết quả -->
     {% if ket_qua %}
     <div id="toast" class="toast show">
       <div class="toast-content">
@@ -99,7 +108,7 @@
           >
             Trang chủ
           </button>
-          {% if ai_thua %}
+          {% if player_won %}
           <button
             class="btn continue-btn"
             onclick="saveScoreAndContinue()"
@@ -121,7 +130,6 @@
 
     <!-- Gán biến Flask vào thẻ span ẩn -->
     <span id="stopTimer" data-stop="{{ stop_timer | lower }}"></span>
-    <span id="gameStateId" data-id="{{ session.get('game_state_id', '') }}"></span>
 
     <!-- Thêm thẻ audio -->
     <audio
@@ -139,9 +147,14 @@
     <!-- Gán dữ liệu từ Flask vào thẻ script ẩn -->
     <script>
       var gameData = {
-          aiThua: {{ ai_thua | tojson }},
+          playerWon: {{ player_won | tojson }},
           ketQua: {{ ket_qua | tojson }}
       };
+
+      // Thiết lập thời gian đếm ngược cho chế độ PvP
+      let countdown = {{ time_limit }};
+      const countdownElement = document.getElementById("countdown");
+      const countdownInterval = setInterval(updateCountdown, 1000);
 
       // Hàm hiển thị form đổi tên
       function showChangeNameForm() {
@@ -163,6 +176,81 @@
           hideChangeNameForm();
         }
       }
+
+      // Hàm lưu điểm và chơi lại cho chế độ PvP
+      function saveScoreAndReset() {
+        fetch("/save-score", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            window.location.href = "/pvp?reset=true";
+          })
+          .catch((error) => {
+            console.error("Lỗi khi lưu điểm:", error);
+            window.location.href = "/pvp?reset=true";
+          });
+      }
+
+      // Hàm lưu điểm và tiếp tục cho chế độ PvP
+      function saveScoreAndContinue() {
+        fetch("/save-score", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            window.location.href = "/pvp?continue=true";
+          })
+          .catch((error) => {
+            console.error("Lỗi khi lưu điểm:", error);
+            window.location.href = "/pvp?continue=true";
+          });
+      }
+
+      // Tải bảng xếp hạng PvP
+      function loadLeaderboard() {
+        fetch("/get-leaderboard?type=ranked")
+          .then((response) => response.json())
+          .then((data) => {
+            const leaderboardBody = document.getElementById("leaderboard-body");
+            leaderboardBody.innerHTML = "";
+
+            if (data.length === 0) {
+              const row = document.createElement("tr");
+              row.innerHTML = '<td colspan="3">Chưa có dữ liệu</td>';
+              leaderboardBody.appendChild(row);
+            } else {
+              data.forEach((player, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                  <td>${index + 1}</td>
+                  <td>${player.name}</td>
+                  <td>${player.score}</td>
+                `;
+                leaderboardBody.appendChild(row);
+              });
+            }
+          })
+          .catch((error) => console.error("Lỗi khi tải bảng xếp hạng:", error));
+      }
+
+      // Tải bảng xếp hạng khi trang được tải
+      document.addEventListener('DOMContentLoaded', function() {
+        loadLeaderboard();
+        
+        // Set the progress bar width and color based on rank info
+        const progressBar = document.querySelector('.progress-bar');
+        if (progressBar) {
+          progressBar.style.width = '{{ progress * 100 }}%';
+          progressBar.style.backgroundColor = '{{ rank_color }}';
+        }
+      });
     </script>
   </body>
 </html>
