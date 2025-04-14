@@ -1,6 +1,7 @@
 import os
 import random
 import time
+import json
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from game_logic import (
     doc_file_tu_vung, 
@@ -15,6 +16,10 @@ from game_logic import (
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")
 
+# Đường dẫn đến file lưu trữ bảng xếp hạng
+LEADERBOARD_FILE = "leaderboard.json"
+RANKED_LEADERBOARD_FILE = "ranked_leaderboard.json"
+
 # Đọc toàn bộ danh sách từ phổ biến từ file easy_words.txt
 def doc_file_tu_pho_bien():
     try:
@@ -28,6 +33,25 @@ def doc_file_tu_pho_bien():
     
     return []
 
+# Hàm đọc bảng xếp hạng từ file
+def load_leaderboard(file_path):
+    try:
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding='utf-8') as file:
+                return json.load(file)
+        return []
+    except Exception as e:
+        print(f"Lỗi khi đọc bảng xếp hạng: {e}")
+        return []
+
+# Hàm lưu bảng xếp hạng vào file
+def save_leaderboard(leaderboard_data, file_path):
+    try:
+        with open(file_path, 'w', encoding='utf-8') as file:
+            json.dump(leaderboard_data, file, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Lỗi khi lưu bảng xếp hạng: {e}")
+
 # Load từ vựng khi ứng dụng khởi động
 tu_vung, tu_map = doc_file_tu_vung()
 
@@ -35,8 +59,8 @@ tu_vung, tu_map = doc_file_tu_vung()
 danh_sach_tu_de = doc_file_tu_pho_bien()
 
 # Bảng xếp hạng
-leaderboard = []
-ranked_leaderboard = []
+leaderboard = load_leaderboard(LEADERBOARD_FILE)
+ranked_leaderboard = load_leaderboard(RANKED_LEADERBOARD_FILE)
 
 # Hệ thống xếp hạng
 RANKS = [
@@ -115,6 +139,9 @@ def home():
         # Sắp xếp lại bảng xếp hạng
         leaderboard.sort(key=lambda x: x["score"], reverse=True)
         leaderboard = leaderboard[:10]  # Giữ top 10
+        
+        # Lưu bảng xếp hạng vào file
+        save_leaderboard(leaderboard, LEADERBOARD_FILE)
     
     # Giữ lại tên người chơi, reset các thông tin khác
     old_name = session.get("player_name", "")
@@ -159,6 +186,9 @@ def reset_session():
         # Sắp xếp lại bảng xếp hạng
         leaderboard.sort(key=lambda x: x["score"], reverse=True)
         leaderboard = leaderboard[:10]  # Giữ top 10
+        
+        # Lưu bảng xếp hạng vào file
+        save_leaderboard(leaderboard, LEADERBOARD_FILE)
     
     # Lưu tên người chơi
     old_name = session.get("player_name", "")
@@ -208,6 +238,10 @@ def change_name():
                 if player["name"] == old_name:
                     player["name"] = player_name
                     break
+            
+            # Lưu bảng xếp hạng vào file
+            save_leaderboard(leaderboard, LEADERBOARD_FILE)
+            save_leaderboard(ranked_leaderboard, RANKED_LEADERBOARD_FILE)
     
     # Nếu đang ở trang chơi, quay lại trang chơi
     if request.form.get("from_game") == "true":
@@ -240,6 +274,7 @@ def save_score():
     # Xác định bảng xếp hạng dựa trên chế độ chơi
     global leaderboard, ranked_leaderboard
     current_leaderboard = ranked_leaderboard if game_mode == "ranked" or game_mode == "pvp" else leaderboard
+    current_file = RANKED_LEADERBOARD_FILE if game_mode == "ranked" or game_mode == "pvp" else LEADERBOARD_FILE
     
     # Kiểm tra xem người chơi đã có trong bảng xếp hạng chưa
     player_exists = False
@@ -266,6 +301,9 @@ def save_score():
     else:
         leaderboard = current_leaderboard
     
+    # Lưu bảng xếp hạng vào file
+    save_leaderboard(current_leaderboard, current_file)
+    
     return jsonify({"success": True})
 
 @app.route('/get-leaderboard')
@@ -273,7 +311,14 @@ def get_leaderboard():
     # Xác định bảng xếp hạng dựa trên chế độ chơi hiện tại
     game_mode = session.get("game_mode", "solo")
     if (game_mode == "ranked" or game_mode == "pvp") and request.args.get("type") == "ranked":
+        # Tải lại bảng xếp hạng từ file để đảm bảo dữ liệu mới nhất
+        global ranked_leaderboard
+        ranked_leaderboard = load_leaderboard(RANKED_LEADERBOARD_FILE)
         return jsonify(ranked_leaderboard)
+    
+    # Tải lại bảng xếp hạng từ file để đảm bảo dữ liệu mới nhất
+    global leaderboard
+    leaderboard = load_leaderboard(LEADERBOARD_FILE)
     return jsonify(leaderboard)
 
 # Add this new route after the get-leaderboard route
@@ -292,6 +337,9 @@ def check_game_state():
 
 @app.route('/ranked-leaderboard')
 def get_ranked_leaderboard():
+    # Tải lại bảng xếp hạng từ file để đảm bảo dữ liệu mới nhất
+    global ranked_leaderboard
+    ranked_leaderboard = load_leaderboard(RANKED_LEADERBOARD_FILE)
     return jsonify(ranked_leaderboard)
 
 @app.route('/get-rank')
@@ -360,6 +408,9 @@ def index():
               # Sắp xếp lại bảng xếp hạng
               leaderboard.sort(key=lambda x: x["score"], reverse=True)
               leaderboard = leaderboard[:10]  # Giữ top 10
+              
+              # Lưu bảng xếp hạng vào file
+              save_leaderboard(leaderboard, LEADERBOARD_FILE)
           
           # Reset session nhưng giữ lại tên người chơi
           old_name = session.get("player_name", "")
@@ -510,6 +561,9 @@ def ranked_mode():
               # Sắp xếp lại bảng xếp hạng
               ranked_leaderboard.sort(key=lambda x: x["score"], reverse=True)
               ranked_leaderboard = ranked_leaderboard[:10]  # Giữ top 10
+              
+              # Lưu bảng xếp hạng vào file
+              save_leaderboard(ranked_leaderboard, RANKED_LEADERBOARD_FILE)
           
           # Reset session nhưng giữ lại tên người chơi
           old_name = session.get("player_name", "")
@@ -616,6 +670,10 @@ def ranked_mode():
               # Cộng điểm xếp hạng khi thắng AI trong chế độ xếp hạng
               current_points = session.get("rank_points", 0)
               session["rank_points"] = current_points + random.randint(20, 30)
+              
+              # Lưu điểm xếp hạng vào file
+              player_data = {"name": player_name, "rank_points": session["rank_points"]}
+              save_player_data(player_data)
 
   # Tính toán thông tin xếp hạng
   rank_info = calculate_rank(session.get("rank_points", 0))
@@ -632,6 +690,53 @@ def ranked_mode():
                        rank=rank_info,
                        game_state_id=session.get("game_state_id", ""))
 
+# Hàm lưu dữ liệu người chơi
+def save_player_data(player_data):
+    try:
+        player_file = "players.json"
+        players = []
+        
+        # Đọc dữ liệu hiện có
+        if os.path.exists(player_file):
+            with open(player_file, 'r', encoding='utf-8') as file:
+                players = json.load(file)
+        
+        # Kiểm tra xem người chơi đã tồn tại chưa
+        player_exists = False
+        for player in players:
+            if player["name"] == player_data["name"]:
+                player["rank_points"] = player_data["rank_points"]
+                player_exists = True
+                break
+        
+        # Nếu chưa tồn tại, thêm mới
+        if not player_exists:
+            players.append(player_data)
+        
+        # Lưu lại vào file
+        with open(player_file, 'w', encoding='utf-8') as file:
+            json.dump(players, file, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Lỗi khi lưu dữ liệu người chơi: {e}")
+
+# Hàm đọc dữ liệu người chơi
+def load_player_data(player_name):
+    try:
+        player_file = "players.json"
+        if os.path.exists(player_file):
+            with open(player_file, 'r', encoding='utf-8') as file:
+                players = json.load(file)
+                
+            for player in players:
+                if player["name"] == player_name:
+                    return player
+        
+        return None
+    except Exception as e:
+        print(f"Lỗi khi đọc dữ liệu người chơi: {e}")
+        return None
+
+# Modify the pvp_mode function to better handle matchmaking and game creation
 @app.route("/pvp", methods=["GET", "POST"])
 def pvp_mode():
     # Đặt chế độ chơi là pvp
@@ -651,9 +756,27 @@ def pvp_mode():
     # Khởi tạo điểm xếp hạng nếu chưa có
     if "rank_points" not in session:
         session["rank_points"] = 0
+        
+        # Kiểm tra xem có dữ liệu người chơi đã lưu không
+        player_data = load_player_data(player_name)
+        if player_data:
+            session["rank_points"] = player_data["rank_points"]
     
     # Tính toán thông tin xếp hạng
     rank_info = calculate_rank(session.get("rank_points", 0))
+    
+    # Xóa người chơi khỏi game hiện tại nếu có
+    for game_id, game in list(pvp_active_games.items()):
+        if player_id in [game["player1"]["id"], game["player2"]["id"]]:
+            # Đánh dấu người chơi đã rời game
+            if player_id == game["player1"]["id"]:
+                game["player1_connected"] = False
+            else:
+                game["player2_connected"] = False
+        
+        # Nếu cả hai người chơi đều đã rời game, xóa game
+        if not game["player1_connected"] and not game["player2_connected"]:
+            del pvp_active_games[game_id]
     
     # Kiểm tra xem người chơi đã trong phòng chờ hay chưa
     if player_id in pvp_waiting_room:
@@ -681,15 +804,17 @@ def pvp_mode():
         # Tạo game mới
         game_id = str(int(time.time())) + str(random.randint(1000, 9999))
         
-        # Chọn ngẫu nhiên từ đầu tiên
-        if len(tu_vung) > 0:
-            first_word = random.choice(tu_vung)
+        # Chọn ngẫu nhiên từ đầu tiên từ danh sách từ dễ
+        if len(danh_sach_tu_de) > 0:
+            first_word = random.choice(danh_sach_tu_de)
         else:
-            first_word = "học tập"
+            # Nếu không có từ dễ, thử lấy từ danh sách từ vựng chung
+            if len(tu_vung) > 0:
+                first_word = random.choice(tu_vung)
+            else:
+                first_word = "học tập"
         
-        # Chọn ngẫu nhiên người chơi đi trước
-        player1_turn = random.choice([True, False])
-        
+        # Người chơi vào phòng chờ trước sẽ đi trước
         pvp_active_games[game_id] = {
             "player1": {
                 "id": opponent_id,
@@ -701,13 +826,16 @@ def pvp_mode():
                 "name": player_name,
                 "score": 0
             },
-            "current_turn": "player1" if player1_turn else "player2",
+            "current_turn": "player1",  # Người chơi vào trước luôn đi trước
             "da_su_dung": [first_word],
             "current_word": first_word,
             "time_limit": 15,
             "last_move_time": time.time(),
             "game_over": False,
-            "winner": None
+            "winner": None,
+            "game_start_time": time.time(),  # Thêm thời gian bắt đầu game
+            "player1_connected": True,
+            "player2_connected": True
         }
         
         return redirect(f'/pvp/game/{game_id}')
@@ -741,6 +869,9 @@ def pvp_game(game_id):
     is_player1 = player_id == game["player1"]["id"]
     current_player = "player1" if is_player1 else "player2"
     opponent = "player2" if is_player1 else "player1"
+    
+    # Đánh dấu người chơi đã kết nối
+    game[f"{current_player}_connected"] = True
     
     # Xử lý nước đi của người chơi
     if request.method == "POST" and game["current_turn"] == current_player and not game["game_over"]:
@@ -795,19 +926,24 @@ def pvp_game(game_id):
             game["lose_reason"] = "Bạn đã hết thời gian. Bạn thua!"
     
     # Nếu game kết thúc và người chơi thắng, cập nhật điểm xếp hạng
-    if game["game_over"] and game["winner"] == current_player and not session.get("rank_updated", False):
+    if game["game_over"] and game["winner"] == current_player and not session.get("rank_updated_" + game_id, False):
         # Cộng điểm xếp hạng khi thắng PVP
         current_points = session.get("rank_points", 0)
         points_to_add = random.randint(30, 50)
         session["rank_points"] = current_points + points_to_add
-        session["rank_updated"] = True
+        session["rank_updated_" + game_id] = True
         session["points_added"] = points_to_add
+        
+        # Lưu điểm xếp hạng vào file
+        player_data = {"name": session.get("player_name", ""), "rank_points": session["rank_points"]}
+        save_player_data(player_data)
     
     # Tính toán thông tin xếp hạng
     rank_info = calculate_rank(session.get("rank_points", 0))
     
     return render_template("pvp_game.html",
                          game=game,
+                         game_id=game_id,
                          player_id=player_id,
                          is_player1=is_player1,
                          current_player=current_player,
@@ -815,7 +951,7 @@ def pvp_game(game_id):
                          player_name=session.get("player_name", "Người chơi ẩn danh"),
                          rank=rank_info,
                          points_added=session.pop("points_added", 0),
-                         rank_updated=session.pop("rank_updated", False))
+                         rank_updated=session.get("rank_updated_" + game_id, False))
 
 @app.route("/pvp/cancel", methods=["POST"])
 def cancel_waiting():
@@ -870,13 +1006,30 @@ def get_game_status(game_id):
     current_player = "player1" if is_player1 else "player2"
     opponent = "player2" if is_player1 else "player1"
     
+    # Đánh dấu người chơi đã kết nối
+    game[f"{current_player}_connected"] = True
+    
+    # Kiểm tra xem đối thủ đã ngắt kết nối chưa
+    opponent_connected = game[f"{opponent}_connected"]
+    
+    # Tính toán thời gian còn lại chính xác
+    remaining_time = max(0, int(game["time_limit"] - (time.time() - game["last_move_time"])))
+    
     # Kiểm tra thời gian hết lượt
-    if not game["game_over"] and time.time() - game["last_move_time"] > game["time_limit"]:
+    if not game["game_over"] and remaining_time <= 0:
         # Người chơi hiện tại hết thời gian
         if game["current_turn"] == current_player:
             game["game_over"] = True
             game["winner"] = opponent
             game["lose_reason"] = "Bạn đã hết thời gian. Bạn thua!"
+        # Đối thủ hết thời gian
+        elif game["current_turn"] == opponent and not opponent_connected:
+            game["game_over"] = True
+            game["winner"] = current_player
+            game["lose_reason"] = "Đối thủ đã hết thời gian. Bạn thắng!"
+    
+    # Tính toán thời gian đã trôi qua kể từ khi bắt đầu game
+    elapsed_time = int(time.time() - game.get("game_start_time", time.time()))
     
     return jsonify({
         "status": "success",
@@ -884,8 +1037,47 @@ def get_game_status(game_id):
         "is_player1": is_player1,
         "current_player": current_player,
         "opponent": opponent,
-        "remaining_time": max(0, int(game["time_limit"] - (time.time() - game["last_move_time"])))
+        "opponent_connected": opponent_connected,
+        "remaining_time": remaining_time,
+        "elapsed_time": elapsed_time,
+        "server_time": int(time.time())
     })
+
+# Add a new route to handle the "Play Again" action
+@app.route("/pvp/play-again", methods=["POST"])
+def pvp_play_again():
+    player_id = session.get("player_id", None)
+    player_name = session.get("player_name", "Người chơi ẩn danh")
+    
+    if not player_id:
+        return redirect('/')
+    
+    # Xóa người chơi khỏi game hiện tại nếu có
+    for game_id, game in list(pvp_active_games.items()):
+        if player_id in [game["player1"]["id"], game["player2"]["id"]]:
+            # Đánh dấu người chơi đã rời game
+            if player_id == game["player1"]["id"]:
+                game["player1_connected"] = False
+            else:
+                game["player2_connected"] = False
+            
+            # Nếu cả hai người chơi đều đã rời game, xóa game
+            if not game["player1_connected"] and not game["player2_connected"]:
+                del pvp_active_games[game_id]
+    
+    # Thêm người chơi vào phòng chờ
+    pvp_waiting_room[player_id] = {
+        "name": player_name,
+        "rank_points": session.get("rank_points", 0),
+        "waiting_since": time.time()
+    }
+    
+    # Xóa các session data liên quan đến game cũ
+    for key in list(session.keys()):
+        if key.startswith("rank_updated_"):
+            session.pop(key, None)
+    
+    return redirect('/pvp')
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -13,52 +13,6 @@
       href="{{ url_for('static', filename='Image/icon.png') }}"
     />
     <style>
-      .opponent-info {
-        position: absolute;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-size: 16px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .opponent-name {
-        font-weight: bold;
-      }
-
-      .opponent-score {
-        color: #ffcc00;
-      }
-
-      .turn-indicator {
-        position: absolute;
-        top: 70px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: {% if game.current_turn == current_player %}rgba(0, 255, 0, 0.7){% else %}rgba(255, 0, 0, 0.7){% endif %};
-        color: white;
-        padding: 8px 15px;
-        border-radius: 20px;
-        font-size: 14px;
-        font-weight: bold;
-        animation: pulse 1.5s infinite;
-      }
-
-      @keyframes pulse {
-        0%, 100% {
-          opacity: 0.7;
-        }
-        50% {
-          opacity: 1;
-        }
-      }
-
       .game-result {
         position: fixed;
         top: 50%;
@@ -149,31 +103,6 @@
         </button>
       </div>
 
-      <!-- Hiển thị thông tin đối thủ -->
-      <div class="opponent-info">
-        <span
-          >Đối thủ:
-          <span class="opponent-name">{{ game[opponent].name }}</span></span
-        >
-        <span
-          >Điểm:
-          <span class="opponent-score">{{ game[opponent].score }}</span></span
-        >
-      </div>
-
-      <!-- Hiển thị lượt chơi -->
-      <div class="turn-indicator">
-        {% if game.current_turn == current_player %}Lượt của bạn{% else %}Lượt
-        của đối thủ{% endif %}
-      </div>
-
-      <div class="score">
-        Score: <span id="scoreValue">{{ game[current_player].score }}</span>
-      </div>
-
-      <!-- Hiển thị chế độ chơi -->
-      <div class="game-mode-badge pvp-mode">PvP</div>
-
       <!-- Biểu tượng bảng xếp hạng -->
       <div class="leaderboard-icon" onclick="toggleLeaderboard()">
         <img
@@ -188,22 +117,15 @@
 
       <div class="word-display" id="currentWord">{{ game.current_word }}</div>
 
-      <form method="POST" id="wordForm">
+      <!-- Update the form submission to prevent the "left game" issue -->
+      <form method="POST" id="wordForm" onsubmit="return handleFormSubmit()">
         <input
           type="text"
           class="input-box"
           name="user_word"
           id="userWordInput"
           autofocus
-          {%
-          if
-          game.current_turn
-          !="current_player"
-          or
-          game.game_over
-          %}disabled{%
-          endif
-          %}
+          {% if game.current_turn != current_player or game.game_over %}disabled{% endif %}
         />
       </form>
 
@@ -269,7 +191,7 @@
       </div>
     </div>
 
-    <!-- Hiển thị kết quả game khi kết thúc -->
+    <!-- Update the game result section to use the new play-again route -->
     {% if game.game_over %}
     <div class="game-result">
       <h2 class="result-title">
@@ -312,70 +234,122 @@
       preload="auto"
     ></audio>
 
+    <!-- Thêm span ẩn để lưu trữ dữ liệu điểm số và thông tin đối thủ -->
+    <span id="playerScore" style="display: none;">{{ game[current_player].score }}</span>
+    <span id="opponentScore" style="display: none;">{{ game[opponent].score }}</span>
+    <span id="opponentName" style="display: none;">{{ game[opponent].name }}</span>
+
+    <!-- Update the JavaScript to handle synchronization better -->
     <script>
-      // Biến lưu trữ thời gian còn lại
-      let remainingTime = {{ game.time_limit }};
-      const countdownElement = document.getElementById("countdown");
-      let countdownInterval;
+        // Biến lưu trữ thời gian còn lại
+        let remainingTime = {{ game.time_limit }};
+        const countdownElement = document.getElementById("countdown");
+        let countdownInterval;
+        let serverTimeOffset = 0;
+        let lastSyncTime = Date.now();
+        let isMyTurn = {% if game.current_turn == current_player %}true{% else %}false{% endif %};
 
-      // Hàm cập nhật đồng hồ đếm ngược
-      function updateCountdown() {
-        if (remainingTime > 0) {
-          remainingTime--;
-          countdownElement.innerText = remainingTime;
-        } else {
-          clearInterval(countdownInterval);
-          // Tự động làm mới trang để hiển thị kết quả hết thời gian
-          window.location.reload();
+        // Tính toán độ lệch thời gian với server
+        function syncWithServerTime(serverTime) {
+          const clientTime = Math.floor(Date.now() / 1000);
+          serverTimeOffset = serverTime - clientTime;
+          lastSyncTime = Date.now();
         }
-      }
 
-      // Bắt đầu đếm ngược nếu đang là lượt của người chơi và game chưa kết thúc
-      {% if game.current_turn == current_player and not game.game_over %}
-      countdownInterval = setInterval(updateCountdown, 1000);
-      {% endif %}
+        // Hàm xử lý khi submit form
+        function handleFormSubmit() {
+          // Đánh dấu đây là submit form, không phải rời trang
+          window.isFormSubmission = true;
+          return true;
+        }
 
-      // Hàm kiểm tra trạng thái game
-      function checkGameStatus() {
+        // Hàm cập nhật đồng hồ đếm ngược
+        function updateCountdown() {
+          if (remainingTime > 0) {
+            remainingTime--;
+            countdownElement.innerText = remainingTime;
+          } else {
+            clearInterval(countdownInterval);
+            // Tự động làm mới trang để hiển thị kết quả hết thời gian
+            window.location.reload();
+          }
+        }
+
+        // Bắt đầu đồng hồ đếm ngược
+        function startCountdown() {
+          if (countdownInterval) {
+            clearInterval(countdownInterval);
+          }
+          countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        // Dừng đồng hồ đếm ngược
+        function stopCountdown() {
+          if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+          }
+        }
+
+        // Bắt đầu đếm ngược nếu đang là lượt của người chơi và game chưa kết thúc
+        {% if game.current_turn == current_player and not game.game_over %}
+        startCountdown();
+        {% endif %}
+
+        // Hàm kiểm tra trạng thái game
+        function checkGameStatus() {
         fetch('/pvp/game-status/{{ game_id }}')
           .then(response => response.json())
           .then(data => {
             if (data.status === 'success') {
+              // Đồng bộ thời gian với server
+              syncWithServerTime(data.server_time);
+
               // Cập nhật thông tin game
               const game = data.game;
 
               // Cập nhật từ hiện tại
               document.getElementById('currentWord').innerText = game.current_word;
 
-              // Cập nhật điểm số
-              document.getElementById('scoreValue').innerText = game[data.current_player].score;
+              // Cập nhật điểm số trong span ẩn
+              document.getElementById('playerScore').innerText = game[data.current_player].score;
+              document.getElementById('opponentScore').innerText = game[data.opponent].score;
+              document.getElementById('opponentName').innerText = game[data.opponent].name;
 
-              // Cập nhật điểm đối thủ
-              document.querySelector('.opponent-score').innerText = game[data.opponent].score;
+              // Kiểm tra xem đối thủ đã ngắt kết nối chưa
+              if (!data.opponent_connected && !game.game_over) {
+                // Hiển thị thông báo đối thủ đã ngắt kết nối
+                showOpponentDisconnectedMessage();
+              }
 
-              // Cập nhật chỉ báo lượt chơi
-              const turnIndicator = document.querySelector('.turn-indicator');
-              if (game.current_turn === data.current_player) {
-                turnIndicator.innerText = 'Lượt của bạn';
-                turnIndicator.style.background = 'rgba(0, 255, 0, 0.7)';
+              // Xử lý lượt chơi
+              const wasMyTurn = isMyTurn;
+              isMyTurn = game.current_turn === data.current_player;
 
+              if (isMyTurn) {
                 // Bật input nếu là lượt của người chơi
                 document.getElementById('userWordInput').disabled = false;
 
-                // Cập nhật thời gian còn lại
+                // Cập nhật thời gian còn lại từ server
                 remainingTime = data.remaining_time;
                 countdownElement.innerText = remainingTime;
 
                 // Bắt đầu đếm ngược nếu chưa có interval
                 if (!countdownInterval) {
-                  countdownInterval = setInterval(updateCountdown, 1000);
+                  startCountdown();
+                }
+
+                // Nếu vừa chuyển sang lượt của mình, focus vào input
+                if (!wasMyTurn) {
+                  document.getElementById('userWordInput').focus();
                 }
               } else {
-                turnIndicator.innerText = 'Lượt của đối thủ';
-                turnIndicator.style.background = 'rgba(255, 0, 0, 0.7)';
-
                 // Tắt input nếu không phải lượt của người chơi
                 document.getElementById('userWordInput').disabled = true;
+
+                // Cập nhật thời gian còn lại của đối thủ
+                remainingTime = data.remaining_time;
+                countdownElement.innerText = remainingTime;
 
                 // Dừng đếm ngược nếu không phải lượt của người chơi
                 if (countdownInterval) {
@@ -394,80 +368,102 @@
           .catch(error => console.error('Lỗi khi kiểm tra trạng thái game:', error));
       }
 
-      // Kiểm tra trạng thái game mỗi 1 giây nếu game chưa kết thúc
-      {% if not game.game_over %}
-      setInterval(checkGameStatus, 1000);
-      {% endif %}
+        // Hàm hiển thị thông báo đối thủ đã ngắt kết nối
+        function showOpponentDisconnectedMessage() {
+          if (!document.getElementById('opponent-disconnected-message')) {
+            const message = document.createElement('div');
+            message.id = 'opponent-disconnected-message';
+            message.className = 'game-result';
+            message.innerHTML = `
+              <h2 class="result-title">Đối thủ đã ngắt kết nối!</h2>
+              <p class="result-message">Đối thủ đã rời khỏi trận đấu. Bạn sẽ thắng nếu đối thủ không quay lại trong thời gian còn lại.</p>
+            `;
+            document.body.appendChild(message);
 
-      // Phát âm thanh khi game kết thúc
-      {% if game.game_over %}
-      window.addEventListener('DOMContentLoaded', function() {
-        {% if game.winner == current_player %}
-        document.getElementById('winSound').play();
-        {% else %}
-        document.getElementById('loseSound').play();
+            // Tự động đóng thông báo sau 3 giây
+            setTimeout(() => {
+              const messageElement = document.getElementById('opponent-disconnected-message');
+              if (messageElement) {
+                messageElement.remove();
+              }
+            }, 3000);
+          }
+        }
+
+        // Kiểm tra trạng thái game mỗi 1 giây nếu game chưa kết thúc
+        {% if not game.game_over %}
+        setInterval(checkGameStatus, 1000);
         {% endif %}
-      });
-      {% endif %}
 
-      // Hàm hiển thị form đổi tên
-      function showChangeNameForm() {
-        document.getElementById("changeNameModal").style.display = "block";
-        document.getElementById("new_player_name").value = "{{ player_name }}";
-        document.getElementById("new_player_name").focus();
-        document.getElementById("new_player_name").select();
-      }
+        // Phát âm thanh khi game kết thúc
+        {% if game.game_over %}
+        window.addEventListener('DOMContentLoaded', function() {
+          {% if game.winner == current_player %}
+          document.getElementById('winSound').play();
+          {% else %}
+          document.getElementById('loseSound').play();
+          {% endif %}
+        });
+        {% endif %}
 
-      // Hàm ẩn form đổi tên
-      function hideChangeNameForm() {
-        document.getElementById("changeNameModal").style.display = "none";
-      }
-
-      // Đóng modal khi click bên ngoài
-      window.onclick = function(event) {
-        const modal = document.getElementById("changeNameModal");
-        if (event.target == modal) {
-          hideChangeNameForm();
+        // Hàm hiển thị form đổi tên
+        function showChangeNameForm() {
+          document.getElementById("changeNameModal").style.display = "block";
+          document.getElementById("new_player_name").value = "{{ player_name }}";
+          document.getElementById("new_player_name").focus();
+          document.getElementById("new_player_name").select();
         }
-      }
 
-      // Tải bảng xếp hạng
-      function toggleLeaderboard() {
-        const leaderboard = document.getElementById("leaderboard");
-        if (leaderboard.classList.contains("show")) {
-          leaderboard.classList.remove("show");
-        } else {
-          leaderboard.classList.add("show");
-          loadLeaderboard();
+        // Hàm ẩn form đổi tên
+        function hideChangeNameForm() {
+          document.getElementById("changeNameModal").style.display = "none";
         }
-      }
 
-      // Tải bảng xếp hạng PvP
-      function loadLeaderboard() {
-        fetch("/get-leaderboard?type=ranked")
-          .then((response) => response.json())
-          .then((data) => {
-            const leaderboardBody = document.getElementById("leaderboard-body");
-            leaderboardBody.innerHTML = "";
+        // Đóng modal khi click bên ngoài
+        window.onclick = function(event) {
+          const modal = document.getElementById("changeNameModal");
+          if (event.target == modal) {
+            hideChangeNameForm();
+          }
+        }
 
-            if (data.length === 0) {
-              const row = document.createElement("tr");
-              row.innerHTML = '<td colspan="3">Chưa có dữ liệu</td>';
-              leaderboardBody.appendChild(row);
-            } else {
-              data.forEach((player, index) => {
+        // Tải bảng xếp hạng
+        function toggleLeaderboard() {
+          const leaderboard = document.getElementById("leaderboard");
+          if (leaderboard.classList.contains("show")) {
+            leaderboard.classList.remove("show");
+          } else {
+            leaderboard.classList.add("show");
+            loadLeaderboard();
+          }
+        }
+
+        // Tải bảng xếp hạng PvP
+        function loadLeaderboard() {
+          fetch("/get-leaderboard?type=ranked")
+            .then((response) => response.json())
+            .then((data) => {
+              const leaderboardBody = document.getElementById("leaderboard-body");
+              leaderboardBody.innerHTML = "";
+
+              if (data.length === 0) {
                 const row = document.createElement("tr");
-                row.innerHTML = `
-                  <td>${index + 1}</td>
-                  <td>${player.name}</td>
-                  <td>${player.score}</td>
-                `;
+                row.innerHTML = '<td colspan="3">Chưa có dữ liệu</td>';
                 leaderboardBody.appendChild(row);
-              });
-            }
-          })
-          .catch((error) => console.error("Lỗi khi tải bảng xếp hạng:", error));
-      }
+              } else {
+                data.forEach((player, index) => {
+                  const row = document.createElement("tr");
+                  row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${player.name}</td>
+                    <td>${player.score}</td>
+                  `;
+                  leaderboardBody.appendChild(row);
+                });
+              }
+            })
+            .catch((error) => console.error("Lỗi khi tải bảng xếp hạng:", error));
+        }
     </script>
   </body>
 </html>
