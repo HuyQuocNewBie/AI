@@ -2,6 +2,7 @@ import os
 import random
 import time
 import json
+import threading
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from game_logic import (
     doc_file_tu_vung, 
@@ -19,6 +20,9 @@ app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")
 # Đường dẫn đến file lưu trữ bảng xếp hạng
 LEADERBOARD_FILE = "leaderboard.json"
 RANKED_LEADERBOARD_FILE = "ranked_leaderboard.json"
+
+# Thêm lock để đồng bộ hóa truy cập vào phòng chờ và game
+matchmaking_lock = threading.Lock()
 
 # Đọc toàn bộ danh sách từ phổ biến từ file easy_words.txt
 def doc_file_tu_pho_bien():
@@ -88,6 +92,8 @@ def get_rank_and_progress(score):
 # Phòng chờ PVP
 pvp_waiting_room = {}
 pvp_active_games = {}
+# Thêm biến để theo dõi người chơi đang trong game
+players_in_game = {}
 
 # Hàm tính toán cấp bậc dựa trên điểm
 def calculate_rank(points):
@@ -146,11 +152,21 @@ def home():
     # Giữ lại tên người chơi, reset các thông tin khác
     old_name = session.get("player_name", "")
     old_rank_points = session.get("rank_points", 0)
+    old_player_id = session.get("player_id", "")
+    
+    # Xóa người chơi khỏi phòng chờ nếu có
+    if old_player_id and old_player_id in pvp_waiting_room:
+        with matchmaking_lock:
+            if old_player_id in pvp_waiting_room:
+                del pvp_waiting_room[old_player_id]
+    
     session.clear()
     if old_name:
         session["player_name"] = old_name
     if old_rank_points:
         session["rank_points"] = old_rank_points
+    if old_player_id:
+        session["player_id"] = old_player_id
     
     # Nếu người chơi đã có tên, chuyển thẳng đến trang chơi
     if "player_name" in session and session["player_name"].strip():
@@ -163,6 +179,7 @@ def reset_session():
     player_name = session.get("player_name", "")
     score = session.get("score", 0)
     rank_points = session.get("rank_points", 0)
+    old_player_id = session.get("player_id", "")
     
     # Lưu điểm vào bảng xếp hạng nếu có tên và điểm > 0
     if player_name and score > 0:
@@ -190,6 +207,12 @@ def reset_session():
         # Lưu bảng xếp hạng vào file
         save_leaderboard(leaderboard, LEADERBOARD_FILE)
     
+    # Xóa người chơi khỏi phòng chờ nếu có
+    if old_player_id and old_player_id in pvp_waiting_room:
+        with matchmaking_lock:
+            if old_player_id in pvp_waiting_room:
+                del pvp_waiting_room[old_player_id]
+    
     # Lưu tên người chơi
     old_name = session.get("player_name", "")
     
@@ -201,6 +224,8 @@ def reset_session():
         session["player_name"] = old_name
     if rank_points:
         session["rank_points"] = rank_points
+    if old_player_id:
+        session["player_id"] = old_player_id
         
     return redirect('/')  # Chuyển hướng về trang chủ
 
@@ -214,6 +239,9 @@ def save_name():
         # Khởi tạo điểm xếp hạng nếu chưa có
         if "rank_points" not in session:
             session["rank_points"] = 0
+        # Tạo player_id nếu chưa có
+        if "player_id" not in session:
+            session["player_id"] = str(int(time.time() * 1000)) + str(random.randint(1000, 9999))
     return redirect('/')
 
 @app.route('/change-name', methods=["POST"])
@@ -399,322 +427,330 @@ def update_rank_points():
 
 @app.route("/choinoitu", methods=["GET", "POST"]) 
 def index():
-  # Đặt chế độ chơi là solo
-  session["game_mode"] = "solo"
-  
-  # Kiểm tra xem người chơi đã nhập tên chưa
-  if "player_name" not in session or not session["player_name"].strip():
-      return redirect('/')
-      
-  # Reset trò chơi nếu cần
-  if request.method == "GET":
-      if request.args.get("reset") == "true":
-          score = session.get("score", 0) 
-          player_name = session.get("player_name", "")
-          
-          # Lưu điểm trước khi reset
-          if player_name and score > 0:
-              global leaderboard
-              
-              # Kiểm tra xem người chơi đã có trong bảng xếp hạng chưa
-              player_exists = False
-              for player in leaderboard:
-                  if player["name"] == player_name and player["score"] < score:
-                      player["score"] = score  # Cập nhật điểm cao hơn
-                      player_exists = True
-                      break
-                  elif player["name"] == player_name:
-                      player_exists = True
-                      break
-                      
-              # Nếu chưa có trong bảng xếp hạng, thêm mới
-              if not player_exists:
-                  leaderboard.append({"name": player_name, "score": score})
-                  
-              # Sắp xếp lại bảng xếp hạng
-              leaderboard.sort(key=lambda x: x["score"], reverse=True)
-              leaderboard = leaderboard[:10]  # Giữ top 10
-              
-              # Lưu bảng xếp hạng vào file
-              save_leaderboard(leaderboard, LEADERBOARD_FILE)
-          
-          # Reset session nhưng giữ lại tên người chơi
-          old_name = session.get("player_name", "")
-          old_rank_points = session.get("rank_points", 0)
-          session.clear()
-          session["score"] = max(0, score - 2)
-          session["player_name"] = old_name
-          session["rank_points"] = old_rank_points
-          session["game_mode"] = "solo"
-          session["game_state_id"] = str(int(time.time()))  # Add a unique game state ID
-          
-      elif request.args.get("continue") == "true":
-          score = session.get("score", 0)
-          player_name = session.get("player_name", "")
-          rank_points = session.get("rank_points", 0)
-          
-          # Reset session nhưng giữ lại tên người chơi và cộng điểm
-          old_name = session.get("player_name", "")
-          old_game_state_id = session.get("game_state_id", "")
-          session.clear()
-          session["score"] = score + random.randint(2, 5)  # Cộng điểm khi thắng AI
-          session["ai_thua"] = False  # Reset trạng thái AI thua
-          session["player_name"] = old_name
-          session["rank_points"] = rank_points
-          session["game_mode"] = "solo"
-          session["game_state_id"] = old_game_state_id or str(int(time.time()))
-      
-  # Khởi tạo điểm số nếu chưa có
-  if "score" not in session:
-      session["score"] = 0
+    # Đặt chế độ chơi là solo
+    session["game_mode"] = "solo"
+    
+    # Kiểm tra xem người chơi đã nhập tên chưa
+    if "player_name" not in session or not session["player_name"].strip():
+        return redirect('/')
+        
+    # Reset trò chơi nếu cần
+    if request.method == "GET":
+        if request.args.get("reset") == "true":
+            score = session.get("score", 0) 
+            player_name = session.get("player_name", "")
+            
+            # Lưu điểm trước khi reset
+            if player_name and score > 0:
+                global leaderboard
+                
+                # Kiểm tra xem người chơi đã có trong bảng xếp hạng chưa
+                player_exists = False
+                for player in leaderboard:
+                    if player["name"] == player_name and player["score"] < score:
+                        player["score"] = score  # Cập nhật điểm cao hơn
+                        player_exists = True
+                        break
+                    elif player["name"] == player_name:
+                        player_exists = True
+                        break
+                        
+                # Nếu chưa có trong bảng xếp hạng, thêm mới
+                if not player_exists:
+                    leaderboard.append({"name": player_name, "score": score})
+                    
+                # Sắp xếp lại bảng xếp hạng
+                leaderboard.sort(key=lambda x: x["score"], reverse=True)
+                leaderboard = leaderboard[:10]  # Giữ top 10
+                
+                # Lưu bảng xếp hạng vào file
+                save_leaderboard(leaderboard, LEADERBOARD_FILE)
+            
+            # Reset session nhưng giữ lại tên người chơi
+            old_name = session.get("player_name", "")
+            old_rank_points = session.get("rank_points", 0)
+            old_player_id = session.get("player_id", "")
+            session.clear()
+            session["score"] = max(0, score - 2)
+            session["player_name"] = old_name
+            session["rank_points"] = old_rank_points
+            session["player_id"] = old_player_id
+            session["game_mode"] = "solo"
+            session["game_state_id"] = str(int(time.time()))  # Add a unique game state ID
+            
+        elif request.args.get("continue") == "true":
+            score = session.get("score", 0)
+            player_name = session.get("player_name", "")
+            rank_points = session.get("rank_points", 0)
+            
+            # Reset session nhưng giữ lại tên người chơi và cộng điểm
+            old_name = session.get("player_name", "")
+            old_game_state_id = session.get("game_state_id", "")
+            old_player_id = session.get("player_id", "")
+            session.clear()
+            session["score"] = score + random.randint(2, 5)  # Cộng điểm khi thắng AI
+            session["ai_thua"] = False  # Reset trạng thái AI thua
+            session["player_name"] = old_name
+            session["rank_points"] = rank_points
+            session["player_id"] = old_player_id
+            session["game_mode"] = "solo"
+            session["game_state_id"] = old_game_state_id or str(int(time.time()))
+        
+    # Khởi tạo điểm số nếu chưa có
+    if "score" not in session:
+        session["score"] = 0
 
-  # Khởi tạo game_state_id nếu chưa có
-  if "game_state_id" not in session:
-      session["game_state_id"] = str(int(time.time()))
+    # Khởi tạo game_state_id nếu chưa có
+    if "game_state_id" not in session:
+        session["game_state_id"] = str(int(time.time()))
 
-  # Nếu chưa có danh sách từ đã sử dụng
-      session["game_state_id"] = str(int(time.time()))
+    # Nếu chưa có danh sách từ đã sử dụng
+        session["game_state_id"] = str(int(time.time()))
 
-  # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước
-  if "da_su_dung" not in session or not session["da_su_dung"]:
-      if danh_sach_tu_de:  
-          ai_first_word = random.choice(danh_sach_tu_de)
-      else:
-          ai_first_word = "học tập"
+    # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước
+    if "da_su_dung" not in session or not session["da_su_dung"]:
+        if danh_sach_tu_de:  
+            ai_first_word = random.choice(danh_sach_tu_de)
+        else:
+            ai_first_word = "học tập"
 
-      session["da_su_dung"] = [ai_first_word] 
-      session["current_word"] = ai_first_word 
+        session["da_su_dung"] = [ai_first_word] 
+        session["current_word"] = ai_first_word 
 
-  if request.method == "POST":
-      user_word = request.form.get("user_word", "").strip().lower()
-      da_su_dung = session.get("da_su_dung", [])  # Danh sách từ đã sử dụng
-      last_word = session.get("current_word", "") # Lấy từ cuối cùng trong danh sách từ đã sử dụng
+    if request.method == "POST":
+        user_word = request.form.get("user_word", "").strip().lower()
+        da_su_dung = session.get("da_su_dung", [])  # Danh sách từ đã sử dụng
+        last_word = session.get("current_word", "") # Lấy từ cuối cùng trong danh sách từ đã sử dụng
 
-      # Kiểm tra lỗi nhập từ
-      if len(user_word.split()) < 2: 
-          session["ket_qua"] = "Bạn đã nhập 1 từ. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      elif not kiem_tra_tu_nhap(user_word):
-          session["ket_qua"] = "Từ nhập vào phải có ít nhất 2 từ. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      elif not kiem_tra_tu_hop_le(user_word):
-          session["ket_qua"] = "Từ nhập vào không hợp lệ. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      elif not kiem_tra_tu_trong_danh_sach(user_word, tu_vung):
-          session["ket_qua"] = "Từ nhập vào không có trong danh sách từ vựng. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      elif user_word in da_su_dung:
-          session["ket_qua"] = "Từ này đã được sử dụng. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      elif not kiem_tra_tu_noi_tiep(user_word, last_word):
-          session["ket_qua"] = f"Từ nhập vào phải bắt đầu bằng '{tach_tu_cuoi(last_word)}'. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      else:
-          # Người chơi nhập hợp lệ
-          da_su_dung.append(user_word) # Thêm từ người chơi vào danh sách từ đã sử dụng
-          session["da_su_dung"] = da_su_dung # Cập nhật danh sách từ đã sử dụng
-          session["current_word"] = user_word # Cập nhật từ hiện tại
+        # Kiểm tra lỗi nhập từ
+        if len(user_word.split()) < 2: 
+            session["ket_qua"] = "Bạn đã nhập 1 từ. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        elif not kiem_tra_tu_nhap(user_word):
+            session["ket_qua"] = "Từ nhập vào phải có ít nhất 2 từ. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        elif not kiem_tra_tu_hop_le(user_word):
+            session["ket_qua"] = "Từ nhập vào không hợp lệ. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        elif not kiem_tra_tu_trong_danh_sach(user_word, tu_vung):
+            session["ket_qua"] = "Từ nhập vào không có trong danh sách từ vựng. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        elif user_word in da_su_dung:
+            session["ket_qua"] = "Từ này đã được sử dụng. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        elif not kiem_tra_tu_noi_tiep(user_word, last_word):
+            session["ket_qua"] = f"Từ nhập vào phải bắt đầu bằng '{tach_tu_cuoi(last_word)}'. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        else:
+            # Người chơi nhập hợp lệ
+            da_su_dung.append(user_word) # Thêm từ người chơi vào danh sách từ đã sử dụng
+            session["da_su_dung"] = da_su_dung # Cập nhật danh sách từ đã sử dụng
+            session["current_word"] = user_word # Cập nhật từ hiện tại
 
-          # Cập nhật điểm số
-          session["score"] += random.randint(2, 5)
+            # Cập nhật điểm số
+            session["score"] += random.randint(2, 5)
 
-          # AI tìm từ tiếp theo
-          tu_cuoi = tach_tu_cuoi(user_word) # Tách từ cuối cùng của từ người chơi
-          ai_win, ai_sequence = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map) # Tìm từ phù hợp cho AI
+            # AI tìm từ tiếp theo
+            tu_cuoi = tach_tu_cuoi(user_word) # Tách từ cuối cùng của từ người chơi
+            ai_win, ai_sequence = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map) # Tìm từ phù hợp cho AI
 
-          # Nếu AI thắng, thêm từ AI vào danh sách từ đã sử dụng
-          if ai_win and ai_sequence: 
-              ai_move = ai_sequence[0] # Lấy từ đầu tiên trong chuỗi nước đi của AI
-              da_su_dung.append(ai_move) # Thêm từ AI vào danh sách từ đã sử dụng
-              session["da_su_dung"] = da_su_dung # Cập nhật danh sách từ đã sử dụng
-              session["current_word"] = ai_move # Cập nhật từ hiện tại
-          else:
-              session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
-              session["stop_timer"] = True
-              session["ai_thua"] = True
+            # Nếu AI thắng, thêm từ AI vào danh sách từ đã sử dụng
+            if ai_win and ai_sequence: 
+                ai_move = ai_sequence[0] # Lấy từ đầu tiên trong chuỗi nước đi của AI
+                da_su_dung.append(ai_move) # Thêm từ AI vào danh sách từ đã sử dụng
+                session["da_su_dung"] = da_su_dung # Cập nhật danh sách từ đã sử dụng
+                session["current_word"] = ai_move # Cập nhật từ hiện tại
+            else:
+                session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
+                session["stop_timer"] = True
+                session["ai_thua"] = True
 
-  return render_template("choinoitu.html", 
-                       da_su_dung=session.get("da_su_dung", []),
-                       ket_qua=session.pop("ket_qua", None), 
-                       stop_timer=session.pop("stop_timer", False),
-                       ai_thua=session.pop("ai_thua", False),
-                       score=session.get("score", 0),
-                       player_name=session.get("player_name", "Người chơi ẩn danh"),
-                       game_mode="solo")
+    return render_template("choinoitu.html", 
+                         da_su_dung=session.get("da_su_dung", []),
+                         ket_qua=session.pop("ket_qua", None), 
+                         stop_timer=session.pop("stop_timer", False),
+                         ai_thua=session.pop("ai_thua", False),
+                         score=session.get("score", 0),
+                         player_name=session.get("player_name", "Người chơi ẩn danh"),
+                         game_mode="solo")
 
 # Modify the ranked_mode function to update localStorage when a word is submitted
 @app.route("/ranked", methods=["GET", "POST"])
 def ranked_mode():
-  # Đặt chế độ chơi là ranked
-  session["game_mode"] = "ranked"
-  
-  # Kiểm tra xem người chơi đã nhập tên chưa
-  if "player_name" not in session or not session["player_name"].strip():
-      return redirect('/')
-      
-  # Reset trò chơi nếu cần
-  if request.method == "GET":
-      if request.args.get("reset") == "true":
-          score = session.get("score", 0) 
-          player_name = session.get("player_name", "")
-          rank_points = session.get("rank_points", 0)
-          
-          # Lưu điểm trước khi reset
-          if player_name and score > 0:
-              global ranked_leaderboard
-              
-              # Kiểm tra xem người chơi đã có trong bảng xếp hạng chưa
-              player_exists = False
-              for player in ranked_leaderboard:
-                  if player["name"] == player_name and player["score"] < score:
-                      player["score"] = score  # Cập nhật điểm cao hơn
-                      player_exists = True
-                      break
-                  elif player["name"] == player_name:
-                      player_exists = True
-                      break
-                      
-              # Nếu chưa có trong bảng xếp hạng, thêm mới
-              if not player_exists:
-                  ranked_leaderboard.append({"name": player_name, "score": score})
-                  
-              # Sắp xếp lại bảng xếp hạng
-              ranked_leaderboard.sort(key=lambda x: x["score"], reverse=True)
-              ranked_leaderboard = ranked_leaderboard[:10]  # Giữ top 10
-              
-              # Lưu bảng xếp hạng vào file
-              save_leaderboard(ranked_leaderboard, RANKED_LEADERBOARD_FILE)
-          
-          # Reset session nhưng giữ lại tên người chơi
-          old_name = session.get("player_name", "")
-          session.clear()
-          session["score"] = 0  # Trong chế độ xếp hạng, điểm bắt đầu từ 0
-          session["player_name"] = old_name
-          session["rank_points"] = rank_points
-          session["game_mode"] = "ranked"
-          session["game_state_id"] = str(int(time.time()))  # Add a unique game state ID
-          
-      elif request.args.get("continue") == "true":
-          score = session.get("score", 0)
-          player_name = session.get("player_name", "")
-          rank_points = session.get("rank_points", 0)
-          
-          # Reset session nhưng giữ lại tên người chơi và cộng điểm
-          old_name = session.get("player_name", "")
-          old_game_state_id = session.get("game_state_id", "")
-          session.clear()
-          session["score"] = score + random.randint(5, 10)  # Cộng điểm nhiều hơn khi thắng trong chế độ xếp hạng
-          session["ai_thua"] = False  # Reset trạng thái AI thua
-          session["player_name"] = old_name
-          session["rank_points"] = rank_points
-          session["game_mode"] = "ranked"
-          session["game_state_id"] = old_game_state_id or str(int(time.time()))
-      
-  # Khởi tạo điểm số nếu chưa có
-  if "score" not in session:
-      session["score"] = 0
+    # Đặt chế độ chơi là ranked
+    session["game_mode"] = "ranked"
+    
+    # Kiểm tra xem người chơi đã nhập tên chưa
+    if "player_name" not in session or not session["player_name"].strip():
+        return redirect('/')
+        
+    # Reset trò chơi nếu cần
+    if request.method == "GET":
+        if request.args.get("reset") == "true":
+            score = session.get("score", 0) 
+            player_name = session.get("player_name", "")
+            rank_points = session.get("rank_points", 0)
+            
+            # Lưu điểm trước khi reset
+            if player_name and score > 0:
+                global ranked_leaderboard
+                
+                # Kiểm tra xem người chơi đã có trong bảng xếp hạng chưa
+                player_exists = False
+                for player in ranked_leaderboard:
+                    if player["name"] == player_name and player["score"] < score:
+                        player["score"] = score  # Cập nhật điểm cao hơn
+                        player_exists = True
+                        break
+                    elif player["name"] == player_name:
+                        player_exists = True
+                        break
+                        
+                # Nếu chưa có trong bảng xếp hạng, thêm mới
+                if not player_exists:
+                    ranked_leaderboard.append({"name": player_name, "score": score})
+                    
+                # Sắp xếp lại bảng xếp hạng
+                ranked_leaderboard.sort(key=lambda x: x["score"], reverse=True)
+                ranked_leaderboard = ranked_leaderboard[:10]  # Giữ top 10
+                
+                # Lưu bảng xếp hạng vào file
+                save_leaderboard(ranked_leaderboard, RANKED_LEADERBOARD_FILE)
+            
+            # Reset session nhưng giữ lại tên người chơi
+            old_name = session.get("player_name", "")
+            old_player_id = session.get("player_id", "")
+            session.clear()
+            session["score"] = 0  # Trong chế độ xếp hạng, điểm bắt đầu từ 0
+            session["player_name"] = old_name
+            session["player_id"] = old_player_id
+            session["rank_points"] = rank_points
+            session["game_mode"] = "ranked"
+            session["game_state_id"] = str(int(time.time()))  # Add a unique game state ID
+            
+        elif request.args.get("continue") == "true":
+            score = session.get("score", 0)
+            player_name = session.get("player_name", "")
+            rank_points = session.get("rank_points", 0)
+            
+            # Reset session nhưng giữ lại tên người chơi và cộng điểm
+            old_name = session.get("player_name", "")
+            old_game_state_id = session.get("game_state_id", "")
+            old_player_id = session.get("player_id", "")
+            session.clear()
+            session["score"] = score + random.randint(5, 10)  # Cộng điểm nhiều hơn khi thắng trong chế độ xếp hạng
+            session["ai_thua"] = False  # Reset trạng thái AI thua
+            session["player_name"] = old_name
+            session["player_id"] = old_player_id
+            session["rank_points"] = rank_points
+            session["game_mode"] = "ranked"
+            session["game_state_id"] = old_game_state_id or str(int(time.time()))
+        
+    # Khởi tạo điểm số nếu chưa có
+    if "score" not in session:
+        session["score"] = 0
 
-  # Khởi tạo game_state_id nếu chưa có
-  if "game_state_id" not in session:
-      session["game_state_id"] = str(int(time.time()))
+    # Khởi tạo game_state_id nếu chưa có
+    if "game_state_id" not in session:
+        session["game_state_id"] = str(int(time.time()))
 
-  # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước với từ khó hơn
-  if "da_su_dung" not in session or not session["da_su_dung"]:
-      # Trong chế độ xếp hạng, chọn từ khó hơn
-      if len(tu_vung) > 0:
-          ai_first_word = random.choice(tu_vung)
-      else:
-          ai_first_word = "học tập"
+    # Nếu chưa có danh sách từ đã sử dụng, AI bắt đầu trước với từ khó hơn
+    if "da_su_dung" not in session or not session["da_su_dung"]:
+        # Trong chế độ xếp hạng, chọn từ khó hơn
+        if len(tu_vung) > 0:
+            ai_first_word = random.choice(tu_vung)
+        else:
+            ai_first_word = "học tập"
 
-      session["da_su_dung"] = [ai_first_word] 
-      session["current_word"] = ai_first_word
-      session["time_limit"] = 8  # Thời gian ngắn hơn trong chế độ xếp hạng
+        session["da_su_dung"] = [ai_first_word] 
+        session["current_word"] = ai_first_word
+        session["time_limit"] = 8  # Thời gian ngắn hơn trong chế độ xếp hạng
 
-  if request.method == "POST":
-      user_word = request.form.get("user_word", "").strip().lower()
-      da_su_dung = session.get("da_su_dung", [])  # Danh sách từ đã sử dụng
-      last_word = session.get("current_word", "") # Lấy từ cuối cùng trong danh sách từ đã sử dụng
+    if request.method == "POST":
+        user_word = request.form.get("user_word", "").strip().lower()
+        da_su_dung = session.get("da_su_dung", [])  # Danh sách từ đã sử dụng
+        last_word = session.get("current_word", "") # Lấy từ cuối cùng trong danh sách từ đã sử dụng
 
-      # Kiểm tra lỗi nhập từ
-      if len(user_word.split()) < 2: 
-          session["ket_qua"] = "Bạn đã nhập 1 từ. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      elif not kiem_tra_tu_nhap(user_word):
-          session["ket_qua"] = "Từ nhập vào phải có ít nhất 2 từ. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      elif not kiem_tra_tu_hop_le(user_word):
-          session["ket_qua"] = "Từ nhập vào không hợp lệ. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      elif not kiem_tra_tu_trong_danh_sach(user_word, tu_vung):
-          session["ket_qua"] = "Từ nhập vào không có trong danh sách từ vựng. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      elif user_word in da_su_dung:
-          session["ket_qua"] = "Từ này đã được sử dụng. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      elif not kiem_tra_tu_noi_tiep(user_word, last_word):
-          session["ket_qua"] = f"Từ nhập vào phải bắt đầu bằng '{tach_tu_cuoi(last_word)}'. Bạn thua!"
-          session["stop_timer"] = True
-          session["ai_thua"] = False
-      else:
-          # Người chơi nhập hợp lệ
-          da_su_dung.append(user_word) # Thêm từ người chơi vào danh sách từ đã sử dụng
-          session["da_su_dung"] = da_su_dung # Cập nhật danh sách từ đã sử dụng
-          session["current_word"] = user_word # Cập nhật từ hiện tại
+        # Kiểm tra lỗi nhập từ
+        if len(user_word.split()) < 2: 
+            session["ket_qua"] = "Bạn đã nhập 1 từ. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        elif not kiem_tra_tu_nhap(user_word):
+            session["ket_qua"] = "Từ nhập vào phải có ít nhất 2 từ. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        elif not kiem_tra_tu_hop_le(user_word):
+            session["ket_qua"] = "Từ nhập vào không hợp lệ. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        elif not kiem_tra_tu_trong_danh_sach(user_word, tu_vung):
+            session["ket_qua"] = "Từ nhập vào không có trong danh sách từ vựng. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        elif user_word in da_su_dung:
+            session["ket_qua"] = "Từ này đã được sử dụng. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        elif not kiem_tra_tu_noi_tiep(user_word, last_word):
+            session["ket_qua"] = f"Từ nhập vào phải bắt đầu bằng '{tach_tu_cuoi(last_word)}'. Bạn thua!"
+            session["stop_timer"] = True
+            session["ai_thua"] = False
+        else:
+            # Người chơi nhập hợp lệ
+            da_su_dung.append(user_word) # Thêm từ người chơi vào danh sách từ đã sử dụng
+            session["da_su_dung"] = da_su_dung # Cập nhật danh sách từ đã sử dụng
+            session["current_word"] = user_word # Cập nhật từ hiện tại
 
-          # Cập nhật điểm số - trong chế độ xếp hạng, điểm thưởng cao hơn
-          session["score"] += random.randint(5, 10)
+            # Cập nhật điểm số - trong chế độ xếp hạng, điểm thưởng cao hơn
+            session["score"] += random.randint(5, 10)
 
-          # AI tìm từ tiếp theo - trong chế độ xếp hạng, AI thông minh hơn
-          tu_cuoi = tach_tu_cuoi(user_word) # Tách từ cuối cùng của từ người chơi
-          ai_win, ai_sequence = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map, depth=5) # Tìm từ phù hợp cho AI với độ sâu lớn hơn
+            # AI tìm từ tiếp theo - trong chế độ xếp hạng, AI thông minh hơn
+            tu_cuoi = tach_tu_cuoi(user_word) # Tách từ cuối cùng của từ người chơi
+            ai_win, ai_sequence = a_star_search(tu_cuoi, da_su_dung, "ai", tu_map, depth_limit=5) # Tìm từ phù hợp cho AI với độ sâu lớn hơn
 
-          # Nếu AI thắng, thêm từ AI vào danh sách từ đã sử dụng
-          if ai_win and ai_sequence: 
-              ai_move = ai_sequence[0] # Lấy từ đầu tiên trong chuỗi nước đi của AI
-              da_su_dung.append(ai_move) # Thêm từ AI vào danh sách từ đã sử dụng
-              session["da_su_dung"] = da_su_dung # Cập nhật danh sách từ đã sử dụng
-              session["current_word"] = ai_move # Cập nhật từ hiện tại
-              
-              # Giảm thời gian đếm ngược sau mỗi lượt trong chế độ xếp hạng
-              if session.get("time_limit", 10) > 5:
-                  session["time_limit"] = session.get("time_limit", 10) - 1
-          else:
-              session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
-              session["stop_timer"] = True
-              session["ai_thua"] = True
-              # Cộng điểm xếp hạng khi thắng AI trong chế độ xếp hạng
-              current_points = session.get("rank_points", 0)
-              session["rank_points"] = current_points + random.randint(20, 30)
-              
-              # Lưu điểm xếp hạng vào file
-              player_data = {"name": player_name, "rank_points": session["rank_points"]}
-              save_player_data(player_data)
+            # Nếu AI thắng, thêm từ AI vào danh sách từ đã sử dụng
+            if ai_win and ai_sequence: 
+                ai_move = ai_sequence[0] # Lấy từ đầu tiên trong chuỗi nước đi của AI
+                da_su_dung.append(ai_move) # Thêm từ AI vào danh sách từ đã sử dụng
+                session["da_su_dung"] = da_su_dung # Cập nhật danh sách từ đã sử dụng
+                session["current_word"] = ai_move # Cập nhật từ hiện tại
+                
+                # Giảm thời gian đếm ngược sau mỗi lượt trong chế độ xếp hạng
+                if session.get("time_limit", 10) > 5:
+                    session["time_limit"] = session.get("time_limit", 10) - 1
+            else:
+                session["ket_qua"] = "AI không tìm được từ phù hợp. Bạn thắng!"
+                session["stop_timer"] = True
+                session["ai_thua"] = True
+                # Cộng điểm xếp hạng khi thắng AI trong chế độ xếp hạng
+                current_points = session.get("rank_points", 0)
+                session["rank_points"] = current_points + random.randint(20, 30)
+                
+                # Lưu điểm xếp hạng vào file
+                player_data = {"name": session.get("player_name", ""), "rank_points": session["rank_points"]}
+                save_player_data(player_data)
 
-  # Tính toán thông tin xếp hạng
-  rank_info = calculate_rank(session.get("rank_points", 0))
+    # Tính toán thông tin xếp hạng
+    rank_info = calculate_rank(session.get("rank_points", 0))
 
-  return render_template("ranked.html", 
-                       da_su_dung=session.get("da_su_dung", []),
-                       ket_qua=session.pop("ket_qua", None), 
-                       stop_timer=session.pop("stop_timer", False),
-                       ai_thua=session.pop("ai_thua", False),
-                       score=session.get("score", 0),
-                       player_name=session.get("player_name", "Người chơi ẩn danh"),
-                       game_mode="ranked",
-                       time_limit=session.get("time_limit", 8),
-                       rank=rank_info,
-                       game_state_id=session.get("game_state_id", ""))
+    return render_template("ranked.html", 
+                         da_su_dung=session.get("da_su_dung", []),
+                         ket_qua=session.pop("ket_qua", None), 
+                         stop_timer=session.pop("stop_timer", False),
+                         ai_thua=session.pop("ai_thua", False),
+                         score=session.get("score", 0),
+                         player_name=session.get("player_name", "Người chơi ẩn danh"),
+                         game_mode="ranked",
+                         time_limit=session.get("time_limit", 8),
+                         rank=rank_info,
+                         game_state_id=session.get("game_state_id", ""))
 
 # Hàm lưu dữ liệu người chơi
 def save_player_data(player_data):
@@ -791,92 +827,155 @@ def pvp_mode():
     # Tính toán thông tin xếp hạng
     rank_info = calculate_rank(session.get("rank_points", 0))
     
-    # Xóa người chơi khỏi game hiện tại nếu có
-    for game_id, game in list(pvp_active_games.items()):
-        if player_id in [game["player1"]["id"], game["player2"]["id"]]:
-            # Đánh dấu người chơi đã rời game
-            if player_id == game["player1"]["id"]:
-                game["player1_connected"] = False
-            else:
-                game["player2_connected"] = False
-        
-        # Nếu cả hai người chơi đều đã rời game, xóa game
-        if not game["player1_connected"] and not game["player2_connected"]:
-            del pvp_active_games[game_id]
-    
-    # Kiểm tra xem người chơi đã trong phòng chờ hay chưa
-    if player_id in pvp_waiting_room:
-        # Người chơi đã trong phòng chờ, kiểm tra xem có đối thủ không
-        waiting_since = pvp_waiting_room[player_id]["waiting_since"]
-        waiting_time = int(time.time() - waiting_since)
-        
-        # Kiểm tra xem có game đang hoạt động không
+    # Kiểm tra xem người chơi đã trong game nào chưa
+    with matchmaking_lock:
+        # Kiểm tra xem người chơi có trong game không (ưu tiên kiểm tra game trước)
         for game_id, game in pvp_active_games.items():
             if player_id in [game["player1"]["id"], game["player2"]["id"]]:
-                # Người chơi đang trong game
+                # Đánh dấu người chơi đã kết nối
+                if player_id == game["player1"]["id"]:
+                    game["player1_connected"] = True
+                else:
+                    game["player2_connected"] = True
+                
+                # Xóa người chơi khỏi phòng chờ nếu có
+                if player_id in pvp_waiting_room:
+                    del pvp_waiting_room[player_id]
+                
+                # Thêm vào danh sách người chơi đang trong game
+                players_in_game[player_id] = game_id
+                
+                # Chuyển hướng đến trang game
                 return redirect(f'/pvp/game/{game_id}')
         
-        return render_template("pvp_waiting.html", 
-                             player_name=player_name,
-                             waiting_time=waiting_time,
-                             rank=rank_info)
-    
-    # Nếu người chơi không trong phòng chờ, kiểm tra xem có ai đang đợi không
-    if len(pvp_waiting_room) > 0:
-        # Tìm đối thủ phù hợp (có thể thêm logic ghép cặp dựa trên xếp hạng)
-        opponent_id = next(iter(pvp_waiting_room))
-        opponent = pvp_waiting_room.pop(opponent_id)
+        # Kiểm tra xem người chơi đã trong phòng chờ hay chưa
+        if player_id in pvp_waiting_room:
+            # Người chơi đã trong phòng chờ, kiểm tra xem có đối thủ không
+            waiting_since = pvp_waiting_room[player_id]["waiting_since"]
+            waiting_time = int(time.time() - waiting_since)
+            
+            # Tìm đối thủ phù hợp
+            for opponent_id, opponent in list(pvp_waiting_room.items()):
+                if opponent_id != player_id:
+                    # Tạo game mới
+                    game_id = str(int(time.time())) + str(random.randint(1000, 9999))
+                    
+                    # Chọn ngẫu nhiên từ đầu tiên từ danh sách từ dễ
+                    if len(danh_sach_tu_de) > 0:
+                        first_word = random.choice(danh_sach_tu_de)
+                    else:
+                        # Nếu không có từ dễ, thử lấy từ danh sách từ vựng chung
+                        if len(tu_vung) > 0:
+                            first_word = random.choice(tu_vung)
+                        else:
+                            first_word = "học tập"
+                    
+                    # Người chơi vào phòng chờ trước sẽ đi trước
+                    pvp_active_games[game_id] = {
+                        "player1": {
+                            "id": opponent_id,
+                            "name": opponent["name"],
+                            "score": 0
+                        },
+                        "player2": {
+                            "id": player_id,
+                            "name": player_name,
+                            "score": 0
+                        },
+                        "current_turn": "player1",  # Người chơi vào trước luôn đi trước
+                        "da_su_dung": [first_word],
+                        "current_word": first_word,
+                        "time_limit": 15,
+                        "last_move_time": time.time(),
+                        "game_over": False,
+                        "winner": None,
+                        "game_start_time": time.time(),  # Thêm thời gian bắt đầu game
+                        "player1_connected": True,
+                        "player2_connected": True,
+                        "timestamp": time.time()  # Thêm timestamp để theo dõi cập nhật
+                    }
+                    
+                    # Xóa cả hai người chơi khỏi phòng chờ
+                    del pvp_waiting_room[opponent_id]
+                    del pvp_waiting_room[player_id]
+                    
+                    # Thêm vào danh sách người chơi đang trong game
+                    players_in_game[player_id] = game_id
+                    players_in_game[opponent_id] = game_id
+                    
+                    # Chuyển hướng đến trang game
+                    return redirect(f'/pvp/game/{game_id}')
+            
+            # Nếu không tìm thấy đối thủ, hiển thị trang chờ
+            return render_template("pvp_waiting.html", 
+                                player_name=player_name,
+                                waiting_time=waiting_time,
+                                rank=rank_info)
         
-        # Tạo game mới
-        game_id = str(int(time.time())) + str(random.randint(1000, 9999))
-        
-        # Chọn ngẫu nhiên từ đầu tiên từ danh sách từ dễ
-        if len(danh_sach_tu_de) > 0:
-            first_word = random.choice(danh_sach_tu_de)
-        else:
-            # Nếu không có từ dễ, thử lấy từ danh sách từ vựng chung
-            if len(tu_vung) > 0:
-                first_word = random.choice(tu_vung)
-            else:
-                first_word = "học tập"
-        
-        # Người chơi vào phòng chờ trước sẽ đi trước
-        pvp_active_games[game_id] = {
-            "player1": {
-                "id": opponent_id,
-                "name": opponent["name"],
-                "score": 0
-            },
-            "player2": {
-                "id": player_id,
-                "name": player_name,
-                "score": 0
-            },
-            "current_turn": "player1",  # Người chơi vào trước luôn đi trước
-            "da_su_dung": [first_word],
-            "current_word": first_word,
-            "time_limit": 15,
-            "last_move_time": time.time(),
-            "game_over": False,
-            "winner": None,
-            "game_start_time": time.time(),  # Thêm thời gian bắt đầu game
-            "player1_connected": True,
-            "player2_connected": True
-        }
-        
-        return redirect(f'/pvp/game/{game_id}')
-    else:
-        # Không có ai đang đợi, thêm người chơi vào phòng chờ
+        # Nếu người chơi không trong phòng chờ, thêm vào phòng chờ
         pvp_waiting_room[player_id] = {
             "name": player_name,
             "rank_points": session.get("rank_points", 0),
             "waiting_since": time.time()
         }
         
+        # Tìm đối thủ phù hợp
+        for opponent_id, opponent in list(pvp_waiting_room.items()):
+            if opponent_id != player_id:
+                # Tạo game mới
+                game_id = str(int(time.time())) + str(random.randint(1000, 9999))
+                
+                # Chọn ngẫu nhiên từ đầu tiên từ danh sách từ dễ
+                if len(danh_sach_tu_de) > 0:
+                    first_word = random.choice(danh_sach_tu_de)
+                else:
+                    # Nếu không có từ dễ, thử lấy từ danh sách từ vựng chung
+                    if len(tu_vung) > 0:
+                        first_word = random.choice(tu_vung)
+                    else:
+                        first_word = "học tập"
+                
+                # Người chơi vào phòng chờ trước sẽ đi trước
+                pvp_active_games[game_id] = {
+                    "player1": {
+                        "id": opponent_id,
+                        "name": opponent["name"],
+                        "score": 0
+                    },
+                    "player2": {
+                        "id": player_id,
+                        "name": player_name,
+                        "score": 0
+                    },
+                    "current_turn": "player1",  # Người chơi vào trước luôn đi trước
+                    "da_su_dung": [first_word],
+                    "current_word": first_word,
+                    "time_limit": 15,
+                    "last_move_time": time.time(),
+                    "game_over": False,
+                    "winner": None,
+                    "game_start_time": time.time(),  # Thêm thời gian bắt đầu game
+                    "player1_connected": True,
+                    "player2_connected": True,
+                    "timestamp": time.time()  # Thêm timestamp để theo dõi cập nhật
+                }
+                
+                # Xóa cả hai người chơi khỏi phòng chờ
+                del pvp_waiting_room[opponent_id]
+                del pvp_waiting_room[player_id]
+                
+                # Thêm vào danh sách người chơi đang trong game
+                players_in_game[player_id] = game_id
+                players_in_game[opponent_id] = game_id
+                
+                # Chuyển hướng đến trang game
+                return redirect(f'/pvp/game/{game_id}')
+        
+        # Nếu không tìm thấy đối thủ, hiển thị trang chờ
         return render_template("pvp_waiting.html", 
-                             player_name=player_name,
-                             waiting_time=0,
-                             rank=rank_info)
+                            player_name=player_name,
+                            waiting_time=0,
+                            rank=rank_info)
 
 @app.route("/pvp/game/<game_id>", methods=["GET", "POST"])
 def pvp_game(game_id):
@@ -892,9 +991,13 @@ def pvp_game(game_id):
         return redirect('/pvp')
     
     # Đảm bảo người chơi không bị đưa về trang tìm kiếm đối thủ
-    # khi đang trong trận đấu
-    if player_id in pvp_waiting_room:
-        del pvp_waiting_room[player_id]
+    with matchmaking_lock:
+        # Xóa người chơi khỏi phòng chờ nếu có
+        if player_id in pvp_waiting_room:
+            del pvp_waiting_room[player_id]
+        
+        # Thêm vào danh sách người chơi đang trong game
+        players_in_game[player_id] = game_id
     
     # Xác định người chơi hiện tại và đối thủ
     is_player1 = player_id == game["player1"]["id"]
@@ -907,6 +1010,10 @@ def pvp_game(game_id):
     # Xử lý nước đi của người chơi
     if request.method == "POST" and game["current_turn"] == current_player and not game["game_over"]:
         user_word = request.form.get("user_word", "").strip().lower()
+        
+        # Kiểm tra xem form có phải là AJAX request không
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
         da_su_dung = game["da_su_dung"]
         last_word = game["current_word"]
         
@@ -941,12 +1048,24 @@ def pvp_game(game_id):
             game["da_su_dung"] = da_su_dung
             game["current_word"] = user_word
             game["last_move_time"] = time.time()
+            game["timestamp"] = time.time()  # Cập nhật timestamp
             
             # Cập nhật điểm số
             game[current_player]["score"] += random.randint(5, 10)
             
             # Chuyển lượt cho đối thủ
             game["current_turn"] = opponent
+        
+        # Nếu là AJAX request, trả về JSON response
+        if is_ajax:
+            return jsonify({
+                "success": True,
+                "game_over": game["game_over"],
+                "winner": game["winner"],
+                "current_word": game["current_word"],
+                "current_turn": game["current_turn"],
+                "timestamp": game["timestamp"]
+            })
     
     # Kiểm tra thời gian hết lượt
     if not game["game_over"] and time.time() - game["last_move_time"] > game["time_limit"]:
@@ -988,8 +1107,9 @@ def pvp_game(game_id):
 def cancel_waiting():
     player_id = session.get("player_id", None)
     
-    if player_id and player_id in pvp_waiting_room:
-        del pvp_waiting_room[player_id]
+    with matchmaking_lock:
+        if player_id and player_id in pvp_waiting_room:
+            del pvp_waiting_room[player_id]
     
     # Check if this is an AJAX request or beacon
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'GET':
@@ -1004,23 +1124,46 @@ def check_pvp_status():
     if not player_id:
         return jsonify({"status": "error", "message": "Không tìm thấy người chơi"})
     
-    # Kiểm tra xem người chơi có trong game không (ưu tiên kiểm tra game trước)
-    for game_id, game in pvp_active_games.items():
-        if player_id in [game["player1"]["id"], game["player2"]["id"]]:
-            return jsonify({
-                "status": "matched",
-                "game_id": game_id
-            })
-    
-    # Kiểm tra xem người chơi có trong phòng chờ không
-    if player_id in pvp_waiting_room:
-        waiting_since = pvp_waiting_room[player_id]["waiting_since"]
-        waiting_time = int(time.time() - waiting_since)
+    with matchmaking_lock:
+        # Kiểm tra xem người chơi có trong game không (ưu tiên kiểm tra game trước)
+        if player_id in players_in_game:
+            game_id = players_in_game[player_id]
+            if game_id in pvp_active_games:
+                return jsonify({
+                    "status": "matched",
+                    "game_id": game_id
+                })
         
-        return jsonify({
-            "status": "waiting",
-            "waiting_time": waiting_time
-        })
+        # Kiểm tra xem người chơi có trong game không
+        for game_id, game in pvp_active_games.items():
+            if player_id in [game["player1"]["id"], game["player2"]["id"]]:
+                # Đánh dấu người chơi đã kết nối
+                if player_id == game["player1"]["id"]:
+                    game["player1_connected"] = True
+                else:
+                    game["player2_connected"] = True
+                
+                # Xóa người chơi khỏi phòng chờ nếu có
+                if player_id in pvp_waiting_room:
+                    del pvp_waiting_room[player_id]
+                
+                # Thêm vào danh sách người chơi đang trong game
+                players_in_game[player_id] = game_id
+                
+                return jsonify({
+                    "status": "matched",
+                    "game_id": game_id
+                })
+        
+        # Kiểm tra xem người chơi có trong phòng chờ không
+        if player_id in pvp_waiting_room:
+            waiting_since = pvp_waiting_room[player_id]["waiting_since"]
+            waiting_time = int(time.time() - waiting_since)
+            
+            return jsonify({
+                "status": "waiting",
+                "waiting_time": waiting_time
+            })
     
     return jsonify({"status": "not_found"})
 
@@ -1075,7 +1218,8 @@ def get_game_status(game_id):
         "opponent_connected": opponent_connected,
         "remaining_time": remaining_time,
         "elapsed_time": elapsed_time,
-        "server_time": int(time.time())
+        "server_time": int(time.time()),
+        "timestamp": game.get("timestamp", time.time())
     })
 
 # Add a new route to handle the "Play Again" action
@@ -1087,25 +1231,31 @@ def pvp_play_again():
     if not player_id:
         return redirect('/')
     
-    # Xóa người chơi khỏi game hiện tại nếu có
-    for game_id, game in list(pvp_active_games.items()):
-        if player_id in [game["player1"]["id"], game["player2"]["id"]]:
-            # Đánh dấu người chơi đã rời game
-            if player_id == game["player1"]["id"]:
-                game["player1_connected"] = False
-            else:
-                game["player2_connected"] = False
+    with matchmaking_lock:
+        # Xóa người chơi khỏi game hiện tại nếu có
+        if player_id in players_in_game:
+            game_id = players_in_game[player_id]
+            if game_id in pvp_active_games:
+                game = pvp_active_games[game_id]
+                # Đánh dấu người chơi đã rời game
+                if player_id == game["player1"]["id"]:
+                    game["player1_connected"] = False
+                else:
+                    game["player2_connected"] = False
+                
+                # Nếu cả hai người chơi đều đã rời game, xóa game
+                if not game["player1_connected"] and not game["player2_connected"]:
+                    del pvp_active_games[game_id]
             
-            # Nếu cả hai người chơi đều đã rời game, xóa game
-            if not game["player1_connected"] and not game["player2_connected"]:
-                del pvp_active_games[game_id]
-    
-    # Thêm người chơi vào phòng chờ
-    pvp_waiting_room[player_id] = {
-        "name": player_name,
-        "rank_points": session.get("rank_points", 0),
-        "waiting_since": time.time()
-    }
+            # Xóa khỏi danh sách người chơi đang trong game
+            del players_in_game[player_id]
+        
+        # Thêm người chơi vào phòng chờ
+        pvp_waiting_room[player_id] = {
+            "name": player_name,
+            "rank_points": session.get("rank_points", 0),
+            "waiting_since": time.time()
+        }
     
     # Xóa các session data liên quan đến game cũ
     for key in list(session.keys()):

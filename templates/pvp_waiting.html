@@ -8,6 +8,8 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Vua Nối Từ - Đang tìm đối thủ</title>
+    <link rel="stylesheet  user-scalable=no" />
+    <title>Vua Nối Từ - Đang tìm đối thủ</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
@@ -319,9 +321,9 @@
       // Cập nhật thời gian mỗi giây
       setInterval(updateWaitingTime, 1000);
 
-      // Kiểm tra trạng thái tìm kiếm mỗi 2 giây
+      // Kiểm tra trạng thái tìm kiếm mỗi 0.5 giây để phản hồi nhanh hơn
       function checkMatchStatus() {
-        fetch('/pvp/check-status')
+        fetch('/pvp/check-status?_=' + Date.now())
           .then(response => response.json())
           .then(data => {
             if (data.status === 'matched') {
@@ -332,8 +334,8 @@
           .catch(error => console.error('Lỗi khi kiểm tra trạng thái:', error));
       }
 
-      // Kiểm tra trạng thái mỗi 1 giây để phản hồi nhanh hơn
-      setInterval(checkMatchStatus, 1000);
+      // Kiểm tra trạng thái mỗi 0.5 giây để phản hồi nhanh hơn
+      setInterval(checkMatchStatus, 500);
 
       // Thêm xử lý khi người dùng rời trang
       window.addEventListener('beforeunload', function() {

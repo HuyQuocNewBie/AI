@@ -208,7 +208,7 @@
       <div class="word-display" id="currentWord">{{ game.current_word }}</div>
 
       <!-- Update the form submission to prevent redirection issues -->
-      <form method="POST" id="wordForm" onsubmit="return handleFormSubmit(event)">
+      <form id="wordForm" onsubmit="return submitWord(event)">
         <input
           type="text"
           class="input-box"
@@ -328,6 +328,8 @@
     <span id="playerScore" style="display: none;">{{ game[current_player].score }}</span>
     <span id="opponentScore" style="display: none;">{{ game[opponent].score }}</span>
     <span id="opponentName" style="display: none;">{{ game[opponent].name }}</span>
+    <span id="gameId" style="display: none;">{{ game_id }}</span>
+    <span id="lastUpdateTimestamp" style="display: none;">{{ game.timestamp|default(0) }}</span>
 
     <!-- Update the JavaScript to handle synchronization better -->
     <script>
@@ -338,7 +340,8 @@
         let serverTimeOffset = 0;
         let lastSyncTime = Date.now();
         let isMyTurn = {% if game.current_turn == current_player %}true{% else %}false{% endif %};
-        let lastUpdateTimestamp = 0;
+        let lastUpdateTimestamp = parseFloat(document.getElementById("lastUpdateTimestamp").innerText) || 0;
+        let isSubmitting = false;
 
         // Tính toán độ lệch thời gian với server
         function syncWithServerTime(serverTime) {
@@ -348,43 +351,85 @@
         }
 
         // Hàm xử lý khi submit form
-        function handleFormSubmit(event) {
-          // Prevent default form behavior to avoid navigation issues
-          if (event) {
-            event.preventDefault();
-          }
+        function submitWord(event) {
+          // Prevent default form behavior
+          event.preventDefault();
+          
+          // Prevent double submission
+          if (isSubmitting) return false;
+          isSubmitting = true;
           
           // Get the input value
-          const userWord = document.getElementById('userWordInput').value.trim();
+          const userWordInput = document.getElementById('userWordInput');
+          const userWord = userWordInput.value.trim();
           
           // Only submit if there's actual input
           if (userWord) {
+            // Disable the input to prevent double submission
+            userWordInput.disabled = true;
+            
             // Create a FormData object
             const formData = new FormData();
             formData.append('user_word', userWord);
             
-            // Disable the input to prevent double submission
-            document.getElementById('userWordInput').disabled = true;
+            // Add a custom header to identify AJAX requests
+            const headers = new Headers({
+              'X-Requested-With': 'XMLHttpRequest'
+            });
             
             // Submit the form using fetch
             fetch(window.location.href, {
               method: 'POST',
               body: formData,
+              headers: headers,
               cache: 'no-store'
             })
-            .then(response => {
-              if (response.redirected) {
-                window.location.href = response.url;
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                // Update the UI with the new game state
+                document.getElementById('currentWord').innerText = data.current_word;
+                
+                // Update turn status
+                isMyTurn = data.current_turn === "{{ current_player }}";
+                
+                // If game is over, reload the page to show the result
+                if (data.game_over) {
+                  window.location.reload();
+                } else {
+                  // Otherwise, re-enable the input if it's still our turn
+                  if (isMyTurn) {
+                    userWordInput.disabled = false;
+                    userWordInput.focus();
+                  }
+                  
+                  // Clear the input field
+                  userWordInput.value = '';
+                  
+                  // Update the timestamp
+                  lastUpdateTimestamp = data.timestamp || Date.now();
+                  document.getElementById("lastUpdateTimestamp").innerText = lastUpdateTimestamp;
+                }
               } else {
-                // If not redirected, reload the page to show updated game state
+                // If there was an error, reload the page
                 window.location.reload();
               }
+              
+              // Reset the submission flag
+              isSubmitting = false;
             })
             .catch(error => {
               console.error('Error submitting word:', error);
               // Re-enable the input if there was an error
-              document.getElementById('userWordInput').disabled = false;
+              userWordInput.disabled = false;
+              isSubmitting = false;
+              
+              // Show an error message
+              alert('Có lỗi xảy ra khi gửi từ. Vui lòng thử lại.');
             });
+          } else {
+            // If no input, just reset the submission flag
+            isSubmitting = false;
           }
           
           // Always return false to prevent the default form submission
@@ -426,7 +471,8 @@
 
         // Hàm kiểm tra trạng thái game
         function checkGameStatus() {
-          fetch('/pvp/game-status/{{ game_id }}')
+          const gameId = document.getElementById("gameId").innerText;
+          fetch('/pvp/game-status/' + gameId + '?_=' + Date.now())
             .then(response => response.json())
             .then(data => {
               if (data.status === 'success') {
@@ -436,6 +482,7 @@
                 }
                 
                 lastUpdateTimestamp = data.timestamp || Date.now();
+                document.getElementById("lastUpdateTimestamp").innerText = lastUpdateTimestamp;
                 
                 // Đồng bộ thời gian với server
                 syncWithServerTime(data.server_time);
@@ -575,7 +622,7 @@
 
         // Tải bảng xếp hạng PvP
         function loadLeaderboard() {
-          fetch("/get-leaderboard?type=ranked")
+          fetch("/get-leaderboard?type=ranked&_=" + Date.now())
             .then((response) => response.json())
             .then((data) => {
               const leaderboardBody = document.getElementById("leaderboard-body");
@@ -599,6 +646,12 @@
             })
             .catch((error) => console.error("Lỗi khi tải bảng xếp hạng:", error));
         }
+
+        // Thêm xử lý khi người dùng rời trang
+        window.addEventListener('beforeunload', function(e) {
+          // Gửi yêu cầu đánh dấu người chơi đã ngắt kết nối
+          navigator.sendBeacon('/pvp/check-status');
+        });
     </script>
   </body>
 </html>
