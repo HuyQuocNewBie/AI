@@ -276,6 +276,15 @@ def save_score():
     current_leaderboard = ranked_leaderboard if game_mode == "ranked" or game_mode == "pvp" else leaderboard
     current_file = RANKED_LEADERBOARD_FILE if game_mode == "ranked" or game_mode == "pvp" else LEADERBOARD_FILE
     
+    # Reload the leaderboard from file to ensure we have the latest data
+    try:
+        if os.path.exists(current_file):
+            with open(current_file, 'r', encoding='utf-8') as file:
+                current_leaderboard = json.load(file)
+    except Exception as e:
+        print(f"Error loading leaderboard: {e}")
+        current_leaderboard = []
+    
     # Kiểm tra xem người chơi đã có trong bảng xếp hạng chưa
     player_exists = False
     for player in current_leaderboard:
@@ -302,7 +311,12 @@ def save_score():
         leaderboard = current_leaderboard
     
     # Lưu bảng xếp hạng vào file
-    save_leaderboard(current_leaderboard, current_file)
+    try:
+        with open(current_file, 'w', encoding='utf-8') as file:
+            json.dump(current_leaderboard, file, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving leaderboard: {e}")
+        return jsonify({"success": False, "message": f"Error saving leaderboard: {e}"})
     
     return jsonify({"success": True})
 
@@ -310,16 +324,28 @@ def save_score():
 def get_leaderboard():
     # Xác định bảng xếp hạng dựa trên chế độ chơi hiện tại
     game_mode = session.get("game_mode", "solo")
-    if (game_mode == "ranked" or game_mode == "pvp") and request.args.get("type") == "ranked":
+    leaderboard_type = request.args.get("type", "")
+    
+    if (game_mode == "ranked" or game_mode == "pvp" or leaderboard_type == "ranked"):
         # Tải lại bảng xếp hạng từ file để đảm bảo dữ liệu mới nhất
-        global ranked_leaderboard
-        ranked_leaderboard = load_leaderboard(RANKED_LEADERBOARD_FILE)
-        return jsonify(ranked_leaderboard)
+        try:
+            if os.path.exists(RANKED_LEADERBOARD_FILE):
+                with open(RANKED_LEADERBOARD_FILE, 'r', encoding='utf-8') as file:
+                    ranked_data = json.load(file)
+                return jsonify(ranked_data)
+        except Exception as e:
+            print(f"Error loading ranked leaderboard: {e}")
+        return jsonify([])
     
     # Tải lại bảng xếp hạng từ file để đảm bảo dữ liệu mới nhất
-    global leaderboard
-    leaderboard = load_leaderboard(LEADERBOARD_FILE)
-    return jsonify(leaderboard)
+    try:
+        if os.path.exists(LEADERBOARD_FILE):
+            with open(LEADERBOARD_FILE, 'r', encoding='utf-8') as file:
+                solo_data = json.load(file)
+            return jsonify(solo_data)
+    except Exception as e:
+        print(f"Error loading solo leaderboard: {e}")
+    return jsonify([])
 
 # Add this new route after the get-leaderboard route
 @app.route('/check-game-state')

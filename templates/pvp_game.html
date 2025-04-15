@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi">
   <head>
+    <!-- Add viewport meta tag with improved settings -->
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Vua Nối Từ - PvP</title>
     <link
       rel="stylesheet"
@@ -86,6 +87,95 @@
       .result-button:hover {
         transform: translateY(-3px);
         box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Responsive adjustments for the game container */
+      .game-container {
+        width: 100%;
+        max-width: 1200px;
+        padding: 0 15px;
+        margin: 0 auto;
+      }
+
+      /* Ensure the word display is responsive */
+      .word-display {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        padding: 0 10px;
+      }
+
+      /* Make the input more touch-friendly */
+      .input-box {
+        -webkit-appearance: none;
+        border-radius: 25px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Improve touch targets for mobile */
+      .change-name-icon, 
+      .leaderboard-icon,
+      .close-btn,
+      .close-modal {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Ensure the game result popup is responsive */
+      .game-result {
+        width: 90%;
+        max-width: 500px;
+        overflow-y: auto;
+        max-height: 90vh;
+      }
+
+      /* Improve accessibility for focus states */
+      button:focus, 
+      input:focus, 
+      .leaderboard-icon:focus,
+      .close-btn:focus,
+      .close-modal:focus {
+        outline: 2px solid #4a90e2;
+        outline-offset: 2px;
+      }
+
+      /* Add smooth transitions for better UX */
+      .input-box, 
+      button, 
+      .leaderboard-icon,
+      .rank-container,
+      .progress-bar {
+        transition: all 0.3s ease;
+      }
+
+      /* Ensure the rank container is responsive */
+      .rank-container {
+        width: 90%;
+        max-width: 450px;
+        margin: 20px auto 0;
+      }
+
+      /* Improve the timer visibility */
+      .timer {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 8px 15px;
+        border-radius: 20px;
+        margin: 10px auto;
+        display: inline-block;
+      }
+
+      /* Ensure the leaderboard is responsive */
+      .leaderboard-panel {
+        max-width: 90%;
+      }
+
+      /* Improve form accessibility */
+      #wordForm {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
       }
     </style>
   </head>
@@ -248,6 +338,7 @@
         let serverTimeOffset = 0;
         let lastSyncTime = Date.now();
         let isMyTurn = {% if game.current_turn == current_player %}true{% else %}false{% endif %};
+        let lastUpdateTimestamp = 0;
 
         // Tính toán độ lệch thời gian với server
         function syncWithServerTime(serverTime) {
@@ -298,75 +389,82 @@
 
         // Hàm kiểm tra trạng thái game
         function checkGameStatus() {
-        fetch('/pvp/game-status/{{ game_id }}')
-          .then(response => response.json())
-          .then(data => {
-            if (data.status === 'success') {
-              // Đồng bộ thời gian với server
-              syncWithServerTime(data.server_time);
+          fetch('/pvp/game-status/{{ game_id }}')
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                // Kiểm tra xem dữ liệu có mới hơn không
+                if (data.timestamp && data.timestamp <= lastUpdateTimestamp) {
+                  return; // Bỏ qua cập nhật nếu dữ liệu không mới
+                }
+                
+                lastUpdateTimestamp = data.timestamp || Date.now();
+                
+                // Đồng bộ thời gian với server
+                syncWithServerTime(data.server_time);
 
-              // Cập nhật thông tin game
-              const game = data.game;
+                // Cập nhật thông tin game
+                const game = data.game;
 
-              // Cập nhật từ hiện tại
-              document.getElementById('currentWord').innerText = game.current_word;
+                // Cập nhật từ hiện tại
+                document.getElementById('currentWord').innerText = game.current_word;
 
-              // Cập nhật điểm số trong span ẩn
-              document.getElementById('playerScore').innerText = game[data.current_player].score;
-              document.getElementById('opponentScore').innerText = game[data.opponent].score;
-              document.getElementById('opponentName').innerText = game[data.opponent].name;
+                // Cập nhật điểm số trong span ẩn
+                document.getElementById('playerScore').innerText = game[data.current_player].score;
+                document.getElementById('opponentScore').innerText = game[data.opponent].score;
+                document.getElementById('opponentName').innerText = game[data.opponent].name;
 
-              // Kiểm tra xem đối thủ đã ngắt kết nối chưa
-              if (!data.opponent_connected && !game.game_over) {
-                // Hiển thị thông báo đối thủ đã ngắt kết nối
-                showOpponentDisconnectedMessage();
-              }
-
-              // Xử lý lượt chơi
-              const wasMyTurn = isMyTurn;
-              isMyTurn = game.current_turn === data.current_player;
-
-              if (isMyTurn) {
-                // Bật input nếu là lượt của người chơi
-                document.getElementById('userWordInput').disabled = false;
-
-                // Cập nhật thời gian còn lại từ server
-                remainingTime = data.remaining_time;
-                countdownElement.innerText = remainingTime;
-
-                // Bắt đầu đếm ngược nếu chưa có interval
-                if (!countdownInterval) {
-                  startCountdown();
+                // Kiểm tra xem đối thủ đã ngắt kết nối chưa
+                if (!data.opponent_connected && !game.game_over) {
+                  // Hiển thị thông báo đối thủ đã ngắt kết nối
+                  showOpponentDisconnectedMessage();
                 }
 
-                // Nếu vừa chuyển sang lượt của mình, focus vào input
-                if (!wasMyTurn) {
-                  document.getElementById('userWordInput').focus();
+                // Xử lý lượt chơi
+                const wasMyTurn = isMyTurn;
+                isMyTurn = game.current_turn === data.current_player;
+
+                if (isMyTurn) {
+                  // Bật input nếu là lượt của người chơi
+                  document.getElementById('userWordInput').disabled = false;
+
+                  // Cập nhật thời gian còn lại từ server
+                  remainingTime = data.remaining_time;
+                  countdownElement.innerText = remainingTime;
+
+                  // Bắt đầu đếm ngược nếu chưa có interval
+                  if (!countdownInterval) {
+                    startCountdown();
+                  }
+
+                  // Nếu vừa chuyển sang lượt của mình, focus vào input
+                  if (!wasMyTurn) {
+                    document.getElementById('userWordInput').focus();
+                  }
+                } else {
+                  // Tắt input nếu không phải lượt của người chơi
+                  document.getElementById('userWordInput').disabled = true;
+
+                  // Cập nhật thời gian còn lại của đối thủ
+                  remainingTime = data.remaining_time;
+                  countdownElement.innerText = remainingTime;
+
+                  // Dừng đếm ngược nếu không phải lượt của người chơi
+                  if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                  }
                 }
-              } else {
-                // Tắt input nếu không phải lượt của người chơi
-                document.getElementById('userWordInput').disabled = true;
 
-                // Cập nhật thời gian còn lại của đối thủ
-                remainingTime = data.remaining_time;
-                countdownElement.innerText = remainingTime;
-
-                // Dừng đếm ngược nếu không phải lượt của người chơi
-                if (countdownInterval) {
-                  clearInterval(countdownInterval);
-                  countdownInterval = null;
+                // Kiểm tra nếu game kết thúc
+                if (game.game_over && !document.querySelector('.game-result')) {
+                  // Làm mới trang để hiển thị kết quả
+                  window.location.reload();
                 }
               }
-
-              // Kiểm tra nếu game kết thúc
-              if (game.game_over && !document.querySelector('.game-result')) {
-                // Làm mới trang để hiển thị kết quả
-                window.location.reload();
-              }
-            }
-          })
-          .catch(error => console.error('Lỗi khi kiểm tra trạng thái game:', error));
-      }
+            })
+            .catch(error => console.error('Lỗi khi kiểm tra trạng thái game:', error));
+        }
 
         // Hàm hiển thị thông báo đối thủ đã ngắt kết nối
         function showOpponentDisconnectedMessage() {
@@ -390,9 +488,9 @@
           }
         }
 
-        // Kiểm tra trạng thái game mỗi 1 giây nếu game chưa kết thúc
+        // Kiểm tra trạng thái game thường xuyên hơn (500ms thay vì 1000ms)
         {% if not game.game_over %}
-        setInterval(checkGameStatus, 1000);
+        setInterval(checkGameStatus, 500);
         {% endif %}
 
         // Phát âm thanh khi game kết thúc

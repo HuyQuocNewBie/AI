@@ -119,9 +119,11 @@ function toggleLeaderboard() {
   }
 }
 
-// Hàm tải dữ liệu bảng xếp hạng
+// Hàm tải dữ liệu bảng xếp hạng - Improved to force reload from server
 function loadLeaderboard() {
-  fetch("/get-leaderboard")
+  // Add a cache-busting parameter to force a fresh request
+  const timestamp = new Date().getTime()
+  fetch(`/get-leaderboard?_=${timestamp}`)
     .then((response) => response.json())
     .then((data) => {
       const leaderboardBody = document.getElementById("leaderboard-body")
@@ -146,39 +148,47 @@ function loadLeaderboard() {
     .catch((error) => console.error("Lỗi khi tải bảng xếp hạng:", error))
 }
 
-// Hàm lưu điểm và chơi lại
+// Hàm lưu điểm và chơi lại - Improved to ensure score is saved
 function saveScoreAndReset() {
   fetch("/save-score", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    cache: "no-store",
   })
     .then((response) => response.json())
     .then((data) => {
-      window.location.href = "/choinoitu?reset=true"
+      // Add a small delay to ensure the score is saved
+      setTimeout(() => {
+        window.location.href = "/choinoitu?reset=true&_=" + new Date().getTime()
+      }, 300)
     })
     .catch((error) => {
       console.error("Lỗi khi lưu điểm:", error)
-      window.location.href = "/choinoitu?reset=true"
+      window.location.href = "/choinoitu?reset=true&_=" + new Date().getTime()
     })
 }
 
-// Hàm lưu điểm và tiếp tục
+// Hàm lưu điểm và tiếp tục - Improved to ensure score is saved
 function saveScoreAndContinue() {
   fetch("/save-score", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    cache: "no-store",
   })
     .then((response) => response.json())
     .then((data) => {
-      window.location.href = "/choinoitu?continue=true"
+      // Add a small delay to ensure the score is saved
+      setTimeout(() => {
+        window.location.href = "/choinoitu?continue=true&_=" + new Date().getTime()
+      }, 300)
     })
     .catch((error) => {
       console.error("Lỗi khi lưu điểm:", error)
-      window.location.href = "/choinoitu?continue=true"
+      window.location.href = "/choinoitu?continue=true&_=" + new Date().getTime()
     })
 }
 
@@ -194,7 +204,9 @@ function checkGameStateFromServer() {
   const gameStateId = gameStateIdElement.dataset.id
   if (!gameStateId) return // Exit if no game state ID
 
-  fetch("/check-game-state")
+  // Add a timestamp to prevent caching
+  const timestamp = new Date().getTime()
+  fetch(`/check-game-state?_=${timestamp}`)
     .then((response) => response.json())
     .then((data) => {
       const currentWord = document.getElementById("currentWord")
@@ -254,8 +266,8 @@ function checkGameStateFromServer() {
 document.addEventListener("DOMContentLoaded", () => {
   const gameStateIdElement = document.getElementById("gameStateId")
   if (gameStateIdElement && gameStateIdElement.dataset.id) {
-    // Start periodic checking
-    gameStateCheckInterval = setInterval(checkGameStateFromServer, 2000)
+    // Start periodic checking - more frequent checks (500ms instead of 2000ms)
+    gameStateCheckInterval = setInterval(checkGameStateFromServer, 500)
 
     // Listen for storage events (cross-tab communication)
     window.addEventListener("storage", (e) => {
