@@ -207,8 +207,8 @@
 
       <div class="word-display" id="currentWord">{{ game.current_word }}</div>
 
-      <!-- Update the form submission to prevent the "left game" issue -->
-      <form method="POST" id="wordForm" onsubmit="return handleFormSubmit()">
+      <!-- Update the form submission to prevent redirection issues -->
+      <form method="POST" id="wordForm" onsubmit="return handleFormSubmit(event)">
         <input
           type="text"
           class="input-box"
@@ -348,10 +348,47 @@
         }
 
         // Hàm xử lý khi submit form
-        function handleFormSubmit() {
-          // Đánh dấu đây là submit form, không phải rời trang
-          window.isFormSubmission = true;
-          return true;
+        function handleFormSubmit(event) {
+          // Prevent default form behavior to avoid navigation issues
+          if (event) {
+            event.preventDefault();
+          }
+          
+          // Get the input value
+          const userWord = document.getElementById('userWordInput').value.trim();
+          
+          // Only submit if there's actual input
+          if (userWord) {
+            // Create a FormData object
+            const formData = new FormData();
+            formData.append('user_word', userWord);
+            
+            // Disable the input to prevent double submission
+            document.getElementById('userWordInput').disabled = true;
+            
+            // Submit the form using fetch
+            fetch(window.location.href, {
+              method: 'POST',
+              body: formData,
+              cache: 'no-store'
+            })
+            .then(response => {
+              if (response.redirected) {
+                window.location.href = response.url;
+              } else {
+                // If not redirected, reload the page to show updated game state
+                window.location.reload();
+              }
+            })
+            .catch(error => {
+              console.error('Error submitting word:', error);
+              // Re-enable the input if there was an error
+              document.getElementById('userWordInput').disabled = false;
+            });
+          }
+          
+          // Always return false to prevent the default form submission
+          return false;
         }
 
         // Hàm cập nhật đồng hồ đếm ngược

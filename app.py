@@ -891,6 +891,11 @@ def pvp_game(game_id):
     if player_id not in [game["player1"]["id"], game["player2"]["id"]]:
         return redirect('/pvp')
     
+    # Đảm bảo người chơi không bị đưa về trang tìm kiếm đối thủ
+    # khi đang trong trận đấu
+    if player_id in pvp_waiting_room:
+        del pvp_waiting_room[player_id]
+    
     # Xác định người chơi hiện tại và đối thủ
     is_player1 = player_id == game["player1"]["id"]
     current_player = "player1" if is_player1 else "player2"
@@ -979,12 +984,16 @@ def pvp_game(game_id):
                          points_added=session.pop("points_added", 0),
                          rank_updated=session.get("rank_updated_" + game_id, False))
 
-@app.route("/pvp/cancel", methods=["POST"])
+@app.route("/pvp/cancel", methods=["POST", "GET"])
 def cancel_waiting():
     player_id = session.get("player_id", None)
     
     if player_id and player_id in pvp_waiting_room:
         del pvp_waiting_room[player_id]
+    
+    # Check if this is an AJAX request or beacon
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'GET':
+        return jsonify({"status": "success"})
     
     return redirect('/')
 
@@ -995,6 +1004,14 @@ def check_pvp_status():
     if not player_id:
         return jsonify({"status": "error", "message": "Không tìm thấy người chơi"})
     
+    # Kiểm tra xem người chơi có trong game không (ưu tiên kiểm tra game trước)
+    for game_id, game in pvp_active_games.items():
+        if player_id in [game["player1"]["id"], game["player2"]["id"]]:
+            return jsonify({
+                "status": "matched",
+                "game_id": game_id
+            })
+    
     # Kiểm tra xem người chơi có trong phòng chờ không
     if player_id in pvp_waiting_room:
         waiting_since = pvp_waiting_room[player_id]["waiting_since"]
@@ -1004,14 +1021,6 @@ def check_pvp_status():
             "status": "waiting",
             "waiting_time": waiting_time
         })
-    
-    # Kiểm tra xem người chơi có trong game không
-    for game_id, game in pvp_active_games.items():
-        if player_id in [game["player1"]["id"], game["player2"]["id"]]:
-            return jsonify({
-                "status": "matched",
-                "game_id": game_id
-            })
     
     return jsonify({"status": "not_found"})
 

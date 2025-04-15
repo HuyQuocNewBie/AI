@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="vi">
   <head>
+    <!-- Add viewport meta tag with improved settings -->
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Vua Nối Từ - Đang tìm đối thủ</title>
     <link
       rel="stylesheet"
@@ -140,6 +144,129 @@
         width: {{ rank.progress }}%;
         transition: width 0.5s ease-in-out;
       }
+      /* Responsive waiting container */
+      .waiting-container {
+        width: 90%;
+        max-width: 500px;
+        margin: 20px auto;
+        padding: 20px;
+      }
+
+      /* Make the cancel button more touch-friendly */
+      .cancel-button {
+        -webkit-appearance: none;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        width: 100%;
+        max-width: 250px;
+      }
+
+      /* Ensure the rank container is responsive */
+      .rank-container {
+        width: 100%;
+        max-width: 400px;
+        margin: 15px auto 0;
+      }
+
+      /* Improve accessibility for focus states */
+      button:focus {
+        outline: 2px solid #4a90e2;
+        outline-offset: 2px;
+      }
+
+      /* Add smooth transitions for better UX */
+      .cancel-button,
+      .rank-container,
+      .progress-bar {
+        transition: all 0.3s ease;
+      }
+
+      /* Responsive text sizes */
+      .waiting-title {
+        font-size: clamp(20px, 5vw, 24px);
+      }
+
+      .waiting-message {
+        font-size: clamp(16px, 4vw, 18px);
+      }
+
+      .waiting-time {
+        font-size: clamp(28px, 7vw, 36px);
+      }
+
+      .rank-title {
+        font-size: clamp(16px, 4vw, 18px);
+      }
+
+      /* Responsive animations */
+      .waiting-animation {
+        margin: 20px auto;
+      }
+
+      /* Media queries for different screen sizes */
+      @media screen and (max-width: 480px) {
+        .waiting-container {
+          padding: 15px;
+        }
+
+        .dot {
+          width: 12px;
+          height: 12px;
+        }
+
+        .cancel-button {
+          padding: 10px 20px;
+          font-size: 16px;
+        }
+
+        .rank-info {
+          padding: 10px;
+          margin-top: 20px;
+        }
+      }
+
+      @media screen and (max-width: 320px) {
+        .waiting-container {
+          padding: 10px;
+        }
+
+        .dot {
+          width: 10px;
+          height: 10px;
+          margin: 0 3px;
+        }
+
+        .cancel-button {
+          padding: 8px 16px;
+          font-size: 14px;
+        }
+      }
+
+      /* Landscape orientation adjustments */
+      @media screen and (max-height: 500px) and (orientation: landscape) {
+        .waiting-container {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .waiting-title, .waiting-message {
+          width: 48%;
+        }
+
+        .waiting-time, .waiting-animation {
+          width: 48%;
+        }
+
+        .rank-info {
+          width: 100%;
+          margin-top: 10px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -205,8 +332,14 @@
           .catch(error => console.error('Lỗi khi kiểm tra trạng thái:', error));
       }
 
-      // Kiểm tra trạng thái mỗi 2 giây
-      setInterval(checkMatchStatus, 2000);
+      // Kiểm tra trạng thái mỗi 1 giây để phản hồi nhanh hơn
+      setInterval(checkMatchStatus, 1000);
+
+      // Thêm xử lý khi người dùng rời trang
+      window.addEventListener('beforeunload', function() {
+        // Gửi yêu cầu hủy tìm kiếm nếu người dùng đóng tab/trình duyệt
+        navigator.sendBeacon('/pvp/cancel');
+      });
     </script>
   </body>
 </html>
